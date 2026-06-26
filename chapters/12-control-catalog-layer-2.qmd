@@ -1,0 +1,442 @@
+# Layer 2 - Runtime Enforcement Controls {#sec-layer-2}
+### Control 05 - Tool Gateway with Policy-as-Code Enforcement {#sec-c05}
+
+**Why**\
+The model is not a security boundary. Prompt guardrails are soft and bypassable.\
+All side effects must be controlled by deterministic enforcement.
+
+**What**\
+A Tool Gateway that:
+
+- authenticates the agent identity (C01)
+
+- validates requests against tool schemas
+
+- evaluates policy-as-code (allow/deny/obligations)
+
+- applies budgets and rate limits (C07)
+
+- signs and records actions (C11/C12)
+
+**How**
+
+- route *all tool calls* through gateway (no direct tool access)
+
+- validate inputs against schemas (reject malformed or ambiguous calls)
+
+- evaluate OPA/Rego policy with context: agent claims, tool risk class, tenant, ORM score
+
+- attach obligations (HITL required, extra verification, redaction requirements)
+
+**Evidence**
+
+- policy decision record per tool call (policy hash, inputs hash, decision, obligations)
+
+- schema validation reject logs
+
+- \% of tool calls that bypass gateway (should be zero)
+
+**Deployment Note:** The \"Tool Gateway\" does not require a heavy network proxy (like an API Gateway) in every deployment. It is a logical intercept.
+
+- *Sidecar Pattern:* Deploy as a localhost sidecar for low latency.
+
+- *Library Adapter:* In strictly controlled runtimes, implement the gateway as a trusted library wrapper around the SDK, provided the agent process cannot bypass it (e.g., via network policies blocking direct egress).
+
+**Failure Modes**
+
+- "direct tool" shortcuts in code paths
+
+- policies enforced in prompts instead of gateway
+
+- no schema validation (free-text tool calling)
+
+- obligations not enforced (logged but ignored)
+
+### Control 06 - Circuit Breakers and Emergency Stop {#sec-c06}
+
+**Why**\
+Autonomous loops and cascades can produce damage at machine speed.\
+\
+You need both:
+
+- manual stop (break-glass)
+
+- automatic stop (breakers)
+
+**What**\
+A supervisory stop system that:
+
+- can disable an agent's ability to perform side effects instantly
+
+- detects runaway patterns (retries, loops, cost spikes, abnormal tool mix)
+
+- freezes evidence (audit + replay) before termination
+
+**How**
+
+- break-glass = revoke identity + deny policy + cut network route
+
+- automated breakers on: tool-call rate, spend velocity, repetitive signatures, anomaly scores
+
+- freeze-and-capture: snapshot trace pointers and ledger head before stopping
+
+**Evidence**
+
+- breaker trigger events with cause codes and thresholds
+
+- time-to-containment metrics
+
+- evidence snapshot pointers produced on stop
+
+**Failure Modes**
+
+- stopping UI but leaving backend permissions intact
+
+- breaker thresholds not tied to consequence (too high/too low)
+
+- termination without capturing replay evidence
+
+### Control 07 - Resource Governance and Economic Safety {#sec-c07}
+
+**Why**\
+Agents can recursively generate work. This creates:
+
+- cost overruns
+
+- API DoS against internal services
+
+- runaway delegation storms
+
+**What**\
+\
+Enforced budgets and quotas per:
+
+- agent instance
+
+- workflow/run
+
+- tool
+
+- tenant
+
+including token budgets, call budgets, concurrency limits, and spend velocity controls.
+
+**How**
+
+- enforce "agent wallets" (budget must be available to proceed)
+
+- per-tool quotas and concurrency pools
+
+- adaptive throttling under system load
+
+- loop detection: max depth, max retries, repetition window signatures
+
+**Evidence**
+
+- budget consumption ledger (budget decrements are events)
+
+- throttle/deny events due to quotas
+
+- cost anomaly alerts with correlation to run IDs
+
+**Failure Modes**
+
+- budgets monitored but not enforced
+
+- no per-tool throttles (one tool can take down the estate)
+
+- retries without caps
+
+- no backpressure between orchestrator and agents
+
+**Architect's Note - Micro vs. Macro enforcement boundaries**
+
+GATE separates *request-level enforcement* from *system-level flow control*. The Tool Gateway enforces micro-level protections on individual tool calls: per-tool rate limits, per-identity quotas, per-request budgets, and spend/velocity caps. The Orchestrator enforces macro-level system health: queue depth limits, concurrency ceilings, global backpressure, workflow scheduling, retries/backoff, and circuit-breaking at the workflow level. In practice: the Gateway protects tools from abusive request patterns; the Orchestrator protects the system from runaway workflows and cascading failure.
+
+### Control 08 - Prompt and Content Injection Defence {#sec-c08}
+
+**Why**\
+Injection attacks cause the model to treat untrusted content as instructions.\
+\
+Indirect injection (retrieved docs) is especially dangerous because it arrives "inside the context."
+
+**What**\
+A layered defence that:
+
+- classifies content sources (trusted vs untrusted)
+
+- normalizes/strips untrusted markup and instruction-like patterns
+
+- enforces instruction hierarchy separation
+
+- escalates high-risk content to additional verification or HITL
+
+**How**
+
+- strict input contracts: tools accept structured JSON, not free text
+
+- isolate system instructions from untrusted content in separate channels/fields
+
+- apply content normalization for HTML/PDF/email sources before model ingestion
+
+- optional guard scanning for known exploit patterns; throttle probing behavior
+
+**Evidence**
+
+- detection metrics (block rate, false positives)
+
+- exploit success rate from adversarial test suite (C15)
+
+- provenance logs for retrieved sources
+
+**Failure Modes**
+
+- feeding raw HTML/PDF into the model
+
+- allowing untrusted content to modify system prompt
+
+- assuming internal documents cannot be malicious
+
+- no regression tests for injection scenarios
+
+- Treating C08 as a quality gate for retrieved content. C08 defends against adversarial inputs and instruction injection, not against stale, low-confidence, or unverified information. See the Memory flow scope note in the Reference Architecture and C18 (Data Quality Gates) for the boundary that covers content quality and freshness.
+
+### Control 09 - Execution Constraints and Invariant Enforcement {#sec-c09}
+
+**Why**
+
+Without this control, an agent can invoke a tool that is technically policy-permitted but operationally catastrophic - because policy rules are contextual (allow/deny given claims and risk scores), while some constraints must hold unconditionally. Examples: no funds transfer above a hard limit regardless of ORM score; no record deletion outside a defined maintenance window; no external API calls to non-allowlisted domains even if the policy engine allows it. Prompt-based constraints fail because they are model-dependent and bypassable via injection or hallucination. Policy-as-code (C05) is necessary but insufficient: policies evaluate context, while invariants must hold regardless of context. This control enforces the invariants that are evaluated after policy but are independent of policy context. In GATE, policy decides when an action is allowed, but invariants decide whether an allowed action is ever permissible.
+
+**What**
+
+A pre-execution invariant checker, implemented as a deterministic gate within the Tool Gateway, that evaluates a set of hardened, versioned invariant rules against every tool request before execution is permitted. Invariants are expressed as boolean conditions (not probabilistic scores) and produce binary outcomes: pass or halt. Invariant failures are not overridable at runtime - they always result in denial and alerting. Unlike policy decisions, invariant halts are not eligible for HITL override by default (see Break-glass override (contract-backed) below).
+
+Core invariant classes:
+
+- Value bounds: transfer_funds.amount_usd \<= X
+
+- Action restrictions: env=prod =\> deny(tool.name matches \"delete\_\*\") unless exception_id present
+
+- Destination allowlists: http.request.host in allowlist_domains
+
+- Time windows: now in maintenance_window(tool.category)
+
+- Run limits: count(irrevocable_actions, run_id) \<= N
+
+**How**
+
+Flow: The Tool Gateway validates schema and identity, evaluates policy (C05), and then evaluates invariants before any tool execution. An invariant halt blocks execution even when policy returns allow.
+
+Deployment: The invariant checker runs as a hardened module within or immediately after the Tool Gateway policy evaluation step. Invariant bundles are versioned separately from policy bundles (invariant_bundle_hash) because they represent non-negotiable safety floors and MUST require a higher change-control bar than policy updates.
+
+For high-impact tools, the invariant gate MAY require pre-action verification artifacts (e.g., C16 proofs or static safety checks) as a prerequisite for pass.
+
+Rollout: Begin in observe-only mode (log violations without halting) to baseline false-positive rates. Promote to enforce mode for irreversible and financial tool categories first, then extend to all side-effecting tools. Never run enforce mode without monitoring the alert path end-to-end.
+
+Testing: For each invariant, maintain a dedicated test case that proves the invariant halts the call when violated. These tests must run in CI on every policy or invariant bundle change. Include at least one test per invariant class where the ORM score and policy decision are both \"allow\" - confirming the invariant layer is independent of policy.
+
+#### Break-glass override (contract-backed)
+
+C09 invariants are non-overridable by default. They are the boolean rules whose failure means an action is denied no matter what policy decision preceded it. Production operations occasionally require an authorised exception: an emergency that justifies a tightly-bounded override of a specific invariant for a specific run. v1.4 contracts the override mechanism end to end.
+
+The override is authorised by a break_glass_record. The record is a signed artifact, not an event: see break_glass_record.schema.json in gate-contracts v1.2.0. It carries record_id (uuid), invariant_halt_event_id (the ledger event that triggered the record\'s creation; single-valued in both scope cases), invariant_rule_id (the rule the override applies to), approver_ids (an array of at least two distinct strings, enforcing dual approval at the schema level with uniqueItems enforced by the schema), justification (a string with a minimum length of 50 characters), exception_scope (a discriminator over specific_run and time_window), time_window_start (date-time, required when exception_scope is time_window and otherwise absent), exception_expires_at (an absolute time bound; for time_window scope this is the window end, for specific_run scope this is the deadline by which the single override must be exercised), the signing_key_ids, and the signatures themselves.
+
+The record additionally carries tenant_id and environment matching the convention used by HITL Decision Records; the verification policy denies any override attempt where the halt event\'s tenant or environment differs from the record\'s.
+
+The two scope cases behave differently at runtime. exception_scope=specific_run means the record authorises exactly the override against the one halt event named in invariant_halt_event_id, and only that override. exception_scope=time_window means the record authorises the override against the triggering halt event AND any subsequent halt event of the same invariant_rule_id falling within \[time_window_start, exception_expires_at\]. Subsequent matched halt events resolve against the existing record; they do not produce new records. One authorisation episode, one record, regardless of how many halt events the window covers.
+
+The invariant halt event in the audit ledger (C11) MUST reference a valid break_glass_record_id. A halt event without a record reference is treated as an unauthorised override and surfaces in the conformance run as a Check09 failure. The verification policy at policies/invariants/c09_break_glass_verification.rego in gate-policies v1.2.0 evaluates each break-glass attempt against the record, confirming on every invocation that dual approval is present (the approver array contains at least two distinct entries), that the exception has not expired, that the invariant_rule_id in the record matches the rule that the halt event flagged, and that the signatures are present and valid against the registered signing keys.
+
+The record is the authorisation evidence. The halt event is the trigger evidence. The verification policy is the runtime check. The three together close the audit gap where v1.3 left break-glass authorisation as a free-form artifact that could not be programmatically tied to the override it permitted.
+
+**Failure modes specific to break-glass.**
+
+- Reusing a single break-glass record against unrelated halt events. The verification policy denies any attempt to bind a specific_run record to a halt event other than the one named in invariant_halt_event_id, and denies any attempt to bind a time_window record to a halt event whose invariant_rule_id does not match the record\'s or whose timestamp falls outside \[time_window_start, exception_expires_at\].
+
+- Approver collusion through proxy signing. The schema requires distinct approver_ids (enforced by uniqueItems) but cannot detect a single human controlling two accounts. Mitigation is operational: the approval workflow enforces independent organisational role separation; the conformance check verifies the role separation as a manual step (Check09 PARTIAL).
+
+- Time-window scope used as a blanket exception. The time_window scope allows a single record to authorise multiple invocations within a bounded period. An operator using the time-window scope routinely turns it into a structural over-approval surface. Mitigation is operator-discretion in v1.4: the change-management process around break-glass records includes a periodic review of the ratio of time-window to specific-run records, and an internal threshold above which time-window issuance requires additional executive sign-off. A programmatic Check09 sub-assertion on this ratio is a candidate for v1.5; v1.4 keeps the discipline at the policy-and-process layer.
+
+**Tier guidance**
+
+Break-glass is permitted at high_privilege tier as the documented escape hatch from invariant denial. It is permitted at bounded tier only for a narrow set of invariant rules documented in the operator\'s runbook. At sandbox tier, break-glass is not permitted: any sandbox invariant denial is a deny outcome, no exception.
+
+**Evidence**
+
+- Invariant check record per tool attempt: invariant_bundle_hash, rule_id, outcome (pass/halt), request_hash, run_id, trace_id
+
+- Replay trace step for every halt: step_type=invariant_halt, invariant_rule_id, request_hash, policy_decision_id, ledger_event_id
+
+- Alert events on invariant halt, with propagation time to on-call
+
+- Coverage metric: % of side-effecting tool calls with a recorded invariant check outcome
+
+- Periodic invariant bundle review log (change control record with approver identity)
+
+**Failure modes**
+
+- Bypass: invariant checker sits after the tool execution step rather than before it - halts produce side effects that already occurred
+
+- Mis-scope: invariants defined in the policy bundle rather than a separate hardened bundle - subject to the same change-control weakness as policy
+
+- Non-enforcement: observe-only mode never promoted to enforce for production tiers
+
+- HITL confusion: operators configure invariant halts as HITL-overridable without a break-glass procedure, defeating their purpose as non-runtime-overridable constraints
+
+- Drift: invariant bundle not updated when new high-impact tools are added to the allowlist
+
+- Hash drift: request_hash computed differently between runtime, gateway, and evidence pipeline (different canonicalization), breaking correlation and causing false denials or unverifiable evidence
+
+- Approval fatigue: if policy routes high-volume, low-impact actions to HITL, approvers will rubber-stamp and the gate becomes meaningless. Mitigation: define HITL as an obligation only for high-impact tool categories or when risk posture exceeds a threshold; treat HITL as scarce capacity and monitor approval rates, time-to-approve, and override frequency
+
+Note for future versions. The broader exception-lifecycle contract for the exception register referenced by C09, C17, C18, and C19 (the data.gate.exceptions data source consumed by their Rego policies) is forthcoming in v1.5. v1.4 closes the specific break-glass record gap as described above; it does not unify the exception register surface across all four controls.
+
+### Control 18 - Data Quality Gates {#sec-c18}
+
+**Layer 2 - Runtime Enforcement Controls**
+
+Placement rationale: C18 sits in Layer 2 alongside C08 and C09 because it is a runtime enforcement gate at a control boundary. C08 defends the prompt/content channel against adversarial inputs at retrieval and ingestion. C09 enforces invariants at the tool boundary. C18 enforces minimum quality gates at the memory retrieval boundary - the same architectural location as C08's retrieval-side defences, expressed through the same Memory Gateway. Placing C18 in Layer 3 (observability) would be wrong: this control denies or downgrades retrievals at enforcement time, it does not merely observe them. Placing it in Layer 1 (identity and integrity) would also be wrong: integrity here means whether the content matches what was stored, not whether the content was worth storing. The retrieval gate is the right home.
+
+**Why**
+
+Without this control, an agent passes every GATE check on the path from prompt to action while operating on stored content that is stale, low-confidence, or unverifiable. The failure mode is well-governed wrongness: the policy decision is correct given the input, the tool call is signed and audited, the replay is reproducible, but the input itself was already untrustworthy when the Memory Gateway returned it.
+
+This happens through three common routes. A vector store entry is years old and describes a process, price, or policy that has since changed; retrieval returns it because the embedding still matches; the agent acts on it. An upstream pipeline writes content with no provenance reference (a scraped document, an unattributed PDF, a transcription with no source link); the Memory Gateway accepts the write because it is not a provenance check on writes - only on reads - and the read returns content whose origin cannot be verified. A model upstream has hallucinated content into a knowledge base during a batch generation step and the hallucination has now propagated as if it were ground truth.
+
+Prompt-based constraints fail because the model cannot reliably introspect the quality of retrieved content. C08 fails because C08 is about adversarial isolation, not quality: a benign-looking but stale document passes every injection defence. C09 invariants fail because invariants are boolean rules over the tool request, not over the retrieved context. C10 replay fails because replay reproduces the behaviour given the same inputs - it does not validate the inputs. The retrieval boundary is the last point in the control plane where minimum quality gates can be applied before content reaches the model.
+
+This control reduces risk by enforcing freshness, confidence, and provenance gates at retrieval time inside the Memory Gateway, and by surfacing low-quality retrievals as evidence and as obligations rather than silently passing them.
+
+**What**
+
+A retrieval-time quality gate implemented as a hardened module inside the Memory Gateway. The gate evaluates every retrieved item against three quality dimensions before the Memory Gateway returns the item to the agent runtime.
+
+*Freshnes*s
+
+Each stored item carries a freshness reference: either a document timestamp captured at write time or a freshness assertion produced by the upstream pipeline. At retrieval time, the gate computes the item's age against the calling tool or context's configured freshness TTL. The TTL is configured per content class (legal text, product pricing, internal policy, public reference) and lives in a quality bundle separate from the policy bundle. Items older than TTL are either denied, downgraded (returned with a stale=true flag that downstream consumers must respect), or routed for HITL review depending on tier.
+
+*Confidence*
+
+Each stored item carries a confidence score recorded at write time. The score's semantics are defined by the upstream pipeline (retrieval similarity threshold at ingest, source reputation score, manual verification flag); GATE does not produce the score, it enforces the threshold. At retrieval time, the gate compares the score against a configured minimum and either denies the retrieval or returns it with a low_confidence=true flag.
+
+*Provenance reference*
+
+Each stored item carries a provenance_uri and a provenance_hash. The gate denies retrievals where the provenance reference is missing, unresolvable, or fails hash verification against the recorded source. This is distinct from C03 artifact integrity (which covers code and policy artifacts) and from poisoning detection (which is about adversarial writes). Provenance enforcement here is about the existence and verifiability of a citable source, not about its trustworthiness.
+
+Invariants the control guarantees:
+
+• No retrieval is returned to the agent runtime without either passing all three gates or carrying explicit quality flags that downstream consumers can see.
+
+• Quality decisions are recorded in the same evidence stream as policy decisions (C11 ledger, C10 replay trace) and are correlated to the originating tool or context request.
+
+• The quality bundle is versioned and signed (C03) and the bundle hash is included in every quality decision record.
+
+The gate produces one of four outcomes per retrieval: pass, flag (return with quality flags set), downgrade (return a reduced subset of fields, suppressing the body where confidence is too low to display but high enough to acknowledge existence), or deny.
+
+**How**
+
+*Control-plane flow*
+
+The Memory Gateway evaluates ACL and TTL (existing behaviour), then runs poisoning detection (existing), then invokes the quality gate. The quality gate reads the item's metadata (timestamp, confidence, provenance), evaluates each dimension against the configured thresholds in the quality bundle, and emits a gate.memory.quality_decision event into the ledger. The decision and the item are returned to the agent runtime, with flags set as the decision requires.
+
+*Deployment*
+
+The quality gate runs in-process inside the Memory Gateway, not as a separate service. Adding a second network hop on the retrieval path would impose latency on every memory read. The gate consumes a quality bundle loaded at startup (and reloaded on bundle update). The quality bundle is a versioned artifact: content_class to TTL mapping, content_class to minimum_confidence mapping, provenance_required flag per content_class, and the action matrix (pass, flag, downgrade, deny) keyed by autonomy tier and content class.
+
+*Safe rollout*
+
+Begin in flag-only mode. The gate evaluates every retrieval and emits decisions, but no retrievals are denied or downgraded - only flagged. This baseline establishes the false-deny rate (retrievals that would have been denied) and the data quality posture across content classes. After two weeks of flag-only operation, promote to enforce mode for one content class at a time, starting with classes whose downstream tools are read-only or low-impact, and ending with classes whose downstream tools are financial or production-write.
+
+*Testing*
+
+For each quality dimension, maintain CI tests with positive and negative cases. Positive freshness: a synthetic item with a timestamp older than TTL produces a deny or flag (per tier). Negative freshness: an item within TTL passes cleanly. Positive confidence: an item below threshold is flagged or denied. Positive provenance: an item with missing provenance_uri is denied. Tests run on every quality bundle change.
+
+*Interaction with C08*
+
+C08 runs after C18 on the retrieval path. The order matters: C18 first decides whether the item is fit for retrieval at all; C08 then decides whether the item's content is safe to admit into the prompt channel. A stale document is denied by C18 before C08 ever sees it. A fresh, high-confidence, properly provenanced document with embedded injection content passes C18 and is caught by C08.
+
+*Interaction with the autonomy tier*
+
+Sandbox tier may run with flag-only enforcement. Bounded tier requires enforcement on freshness and confidence; provenance may be flag-only. High-privilege tier requires enforcement on all three dimensions. Tier-specific behaviour is expressed in the action matrix in the quality bundle.
+
+*Interaction with HITL*
+
+A quality-gate failure may produce an HITL obligation, but only for retrievals destined for high-impact tool categories. Routing all flagged retrievals to HITL produces approval fatigue (the same failure mode noted in C09). Default behaviour for bounded tier on a flag outcome is to log and return with the flag set; HITL is reserved for deny outcomes on high-privilege tier, where the retrieval would otherwise have been blocked.
+
+#### Provenance chain to a registered source
+
+C18 v1.3 enforces that a provenance_uri resolves and that a provenance_hash matches. This is the existence-and-integrity check: the source exists, the recorded hash matches the resolved content. v1.3 does not require the source itself to be one the operator has authorised.
+
+v1.4 extends provenance enforcement to require a chain back to a registered source. A registered source is one of:
+
+- A data source registered in the C04 inventory. The Memory Gateway\'s source registration tracks which upstream pipelines are authorised to write into which content classes, with a signed registration record per source.
+
+- A verified external feed listed in the approved feed registry. The feed registry is a signed, versioned artifact carrying the set of approved external sources, each with a stable identifier and a verification mechanism (typically a public-key fingerprint or a published source manifest hash).
+
+A provenance_uri that resolves and hashes cleanly but points to a source absent from both registries fails the C18 provenance gate. The retrieval is denied at high_privilege tier; at bounded tier the retrieval is flagged with provenance_unregistered and routed through the operator\'s configured action.
+
+The chain enforcement is structural, not by content match. The Memory Gateway holds a snapshot of both registries at start time, refreshed on registry change. On every retrieval, the gate evaluates:
+
+1.  The provenance_uri resolves.
+
+2.  The resolved content\'s hash matches the stored provenance_hash.
+
+3.  The source identifier extracted from the provenance_uri is present in the active C04 source registry OR in the active feed registry.
+
+All three must hold for the retrieval to pass the provenance dimension at high_privilege tier. The feed registry hash is recorded in the quality_decision event so an auditor can replay the registration state at the time of the decision.
+
+The control distinction from C03 is preserved. C03 covers code, policy bundles, prompt bundles, and tool schemas - the artifacts the agent runtime loads and executes. C18 provenance covers data sources that feed the agent\'s memory: the upstream pipelines and external feeds whose content becomes retrieval results. The two control surfaces overlap in spirit (both are about knowing the origin of trusted material) but operate on different artifact classes.
+
+This change closes one specific class of failure: a self-referential or shadow source that satisfies the existence-and-integrity check by writing its own provenance_uri against its own document corpus. The v1.3 mitigation noted this failure mode and recommended schema-level constraints on the provenance_uri shape. v1.4 makes the constraint explicit and enforces it through the registry chain rather than through URI pattern matching alone.
+
+**Provenance URI scheme.** The chain check is enforced at policy evaluation time, not at write time, so provenance_uri remains a free-form URI in memory_item.schema.json for backward compatibility. The Rego policy in policies/memory/c18_quality.rego recognises two normative schemes: gate-source://\<source_id\>/\<path\> resolves the \<source_id\> against the active C04 source registry, and gate-feed://\<feed_id\>/\<path\> resolves the \<feed_id\> against the approved feed registry. URIs in either normative scheme that resolve to a registered entry pass the chain check. URIs in either scheme that fail to resolve are denied at high_privilege and flagged at bounded. URIs using neither scheme (the legacy case) are denied at high_privilege and flagged at bounded; this is how the upgrade from v1.3 lands operationally.
+
+**Failure modes specific to the chain check.**
+
+- Registry sprawl. The approved feed registry grows over time as operators add feeds without removing stale entries. Mitigation: feed registry change history is reviewed quarterly; entries carry a last_validated_at timestamp; entries past a configured staleness threshold are flagged for review.
+
+- Upgrade lift from v1.3 to v1.4. Operators upgrading from v1.3 have a corpus of stored items whose provenance_uri predates either registry scheme. The chain check applies to every retrieval, including retrievals over legacy content. Mitigation: the deny-at-high_privilege / flag-at-bounded behaviour described above gives operators a real upgrade path. The recommended operational sequence is: enrol upstream pipelines into the C04 source registry, populate the approved feed registry with external feeds, run at bounded tier with provenance_unregistered flags surfacing the legacy gap, reconcile the corpus or rewrite provenance URIs as needed, and only then promote to high_privilege. This applies the chain check uniformly without forcing a corpus rewrite as a prerequisite for upgrading the contracts.
+
+- C04 source registration overload. Pushing all upstream pipelines through C04 source registration imposes an integration cost on every team that writes into the memory store. Mitigation: source registration is per-source, not per-document; registering a source authorises the source to write into the content classes named in the registration record. Volume scales with sources, not documents.
+
+- Content-class vocabulary drift between feed registry and quality bundle. The feed registry\'s content_classes_authorised field lists the content classes the feed is allowed to write into. These class names MUST draw from the operator\'s content_class vocabulary maintained alongside C04 and the C18 quality bundle. The schema does not enforce the cross-reference because the vocabulary is operator-owned, not contract-owned. Mitigation is operational: a registry entry whose content_classes_authorised includes a class not present in the quality bundle is flagged in the quarterly registry review and resolved by either adding the class to the bundle or removing it from the entry.
+
+**Evidence**
+
+- gate.memory.quality_decision event per retrieval: timestamp, request_hash, item_id, content_class, freshness_age_seconds, confidence_score, provenance_uri, provenance_hash_verified (bool), quality_bundle_hash, outcome (pass, flag, downgrade, deny), flags_set, trace_id, ledger_event_id.
+
+- Quality bundle change log: signed bundle hash per version with approver identity and change rationale.
+
+- Coverage metric: percent of memory retrievals with a recorded quality decision. Target 100% for bounded and high-privilege tiers.
+
+- Quality posture report: distribution of outcomes per content class, computed daily, used to track data quality drift over time.
+
+- Stale-retrieval rate: percent of retrievals returning items older than TTL but not denied (flag-only or downgraded). Tracked as a leading indicator of upstream pipeline staleness.
+
+- Provenance failure rate: percent of retrievals where provenance hash verification failed. A non-zero rate indicates upstream pipeline drift or tampering.
+
+**Failure modes**
+
+- Quality scores not produced upstream. Stored items arrive at the Memory Gateway with no confidence score or no timestamp because the upstream pipeline does not produce them. The gate cannot evaluate and defaults to pass. Mitigation: the Memory Gateway rejects writes from sources that do not produce required quality metadata, treating the absence of metadata as a write-time violation. This pushes the responsibility back upstream where it belongs.
+
+- TTL set globally rather than per content class. A single TTL applied across all content produces either too many false denies (where the content is naturally long-lived, like legal text) or too many stale passes (where the content turns over rapidly, like pricing). Mitigation: content_class taxonomy is required at write time; TTL is per-class in the quality bundle.
+
+- Confidence threshold treated as accuracy. The confidence score is a property of the retrieval or the source, not of the content's correctness. A high-confidence retrieval of a confidently-stated falsehood still produces wrong outputs. Mitigation: documentation makes clear that C18 is a minimum quality floor, not a correctness guarantee; data quality assurance remains an upstream responsibility.
+
+- Provenance check satisfied by self-reference. An ingestion pipeline that writes its own document IDs as the provenance reference satisfies hash verification trivially while providing no real provenance. Mitigation: provenance_uri schema requires a resolvable external reference (HTTP URI, signed source identifier, or a registered upstream pipeline identity); self-referential URIs fail validation.
+
+- Flag-only mode left permanent. The same failure mode as C09: the control is deployed in observe-only and never promoted because promotion would reveal coverage gaps. Mitigation: documented promotion criteria and an executive escalation if flag-only persists beyond a defined window.
+
+- Downstream consumers ignore flags. The gate flags a retrieval but the agent runtime or the prompt template does not honour the flag, so the flagged content reaches the model anyway. Mitigation: the agent runtime treats flagged content as a structured field, not as inline text; the prompt template surfaces flags explicitly; C13 semantic traces capture whether the agent acknowledged the flag in its reasoning category.
+
+- Quality bundle change without policy review. The quality bundle becomes a back door to relax controls without going through policy review. Mitigation: quality bundle changes are subject to the same change control as invariant bundle changes in C09, with signed approvals and a separate review path.
+
+Note for future versions. The broader exception-lifecycle contract for the exception register referenced by C09, C17, C18, and C19 (the data.gate.exceptions data source consumed by their Rego policies) is forthcoming in v1.5.
+
+**NIST AI RMF alignment**
+
+C18 maps to MEASURE and MANAGE. MEASURE: the control implements MS-2.10 (data quality is monitored) and MS-4 (feedback from operations is integrated into the AI system). MANAGE: the control implements MG-3 (risks from third-party entities are managed) by treating upstream content sources as third parties whose output is gated at the retrieval boundary. Rationale: retrieval-time minimum quality enforcement.
+
+**ISO/IEC 42001 alignment**
+
+C18 maps to A.7.4 (quality of data used in AI systems) and A.7.5 (data provenance), with a supporting link to A.8.3 (information for interested parties) via the quality decision evidence stream. Typical evidence produced: quality decision logs, quality bundle versions, content-class TTL configuration, provenance verification reports.

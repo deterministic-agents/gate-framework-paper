@@ -1,0 +1,152 @@
+# Key Definitions
+
+**Agent**: A system that (a) forms plans, (b) retrieves context/memory, and (c) calls tools to act.
+
+**Control Plane**: A supervisory layer that governs what workloads can do. In GATE, the control plane sits between the model and the world, enforcing deterministic controls.
+
+**Control (GATE Control)**: An indivisible governance mechanism that can be implemented and verified independently (identity, policy enforcement, audit ledger, replay, etc.).
+
+**Determinism (Operational Determinism)**: In this framework, "deterministic" means deterministic at the control boundary: tool and memory actions are mediated, recorded, and reproducible using captured request/response snapshots, pinned bundles, and replay traces. It does not assert that an LLM's internal token generation is perfectly reproducible across providers without pinning model versions and execution conditions.
+
+**Replay-Deterministic Execution**: A run is replay-deterministic if, given the recorded replay trace and snapshots, the system reproduces the same sequence of tool and memory operations with matching request/response hashes and equivalent outcomes, without dependence on live external services.
+
+**Trustworthiness (Operational)**: A property where agent behavior is bounded by deterministic controls such that failures are:
+
+- contained (limited blast radius)
+
+- attributable (who did what)
+
+- reproducible (deterministic replay)
+
+- governable (policy, budgets, approvals)
+
+- auditable (tamper-evident evidence)
+
+## Glossary
+
+**ABOM (Agent Bill of Materials)**\
+A versioned manifest describing an agent's allowed runtime artifacts and governance posture. Typically includes agent name/version, image digest, policy bundle hash, prompt bundle hash, toolset hash, required GATE Controls, memory partitions, allowed tools, and autonomy tier. Used for integrity binding and auditability.
+
+**Action (Tool Action)**\
+A discrete side-effecting or non-side-effecting invocation executed via the Tool Gateway (e.g., crm.update_contact, transfer_funds). In GATE, actions are always governed by policy decisions, budgets, and evidence emission.
+
+**Agent Instance**\
+A single execution instance of an agent runtime (often ephemeral) with a unique workload identity. Distinct from "agent version." An instance executes one run or workflow and is attributable and revocable.
+
+**Agent Runtime**\
+The compute environment running the model client and agent logic (planner/executor), including the tools SDK. In GATE, the runtime proposes actions; the control plane authorizes and executes them.
+
+**Allowlist / Denylist**\
+Policy lists defining allowed or forbidden tools, destinations, data sources, or action classes. Allowlists are preferred for high-risk actions.
+
+**Attestation**\
+A cryptographic proof that a workload is running in an expected environment and configuration (e.g., image digest, measured boot values, or TEE attestation). Used by GATE to gate tool/memory access.
+
+**Audit Ledger**\
+A tamper-evident, append-only record of key governance events (policy decisions, tool calls, memory operations). Typically implemented via hash chaining, signatures, and immutable storage retention (WORM).
+
+**Backpressure**\
+A control-plane mechanism that slows or halts work production when downstream capacity is constrained (rate limits, queue depth signals, budget exhaustion). Essential because agents can generate endogenous load.
+
+**Breaker (Circuit Breaker)**\
+An automated supervisory control that halts execution when unsafe or abnormal patterns occur (looping, rapid retries, spend velocity spikes, anomalous tool usage). Usually enforced at the Tool Gateway and/or Orchestrator.
+
+**Canonical Serialization**A deterministic representation of structured data used for hashing and signatures (stable ordering, normalized encoding). Required for consistent request_hash/response_hash verification across systems.
+
+**Control (GATE Control)**\
+An implementable, verifiable governance mechanism enforced outside the model, e.g., Tool Gateway policy enforcement, verifiable audit ledger, deterministic replay, memory gateway. Controls are composable and independently adoptable.
+
+**Control Plane**\
+A supervisory layer that manages and constrains system behavior. In GATE, the control plane mediates all tool and memory access, emits evidence, enforces budgets, and gates autonomy based on risk.
+
+**Decision Record (Policy Decision Record)**A structured artifact produced by the policy engine describing allow/deny and obligations for an attempted action, including decision_id, policy bundle hash, request hash, and reason codes.
+
+**Deterministic Replay**\
+The ability to re-run an agent workflow using recorded traces and snapshots such that tool responses and outcomes reproduce the original behavior. Requires capture of model config, context hashes, tool snapshots, and routing decisions.
+
+**Event Sourcing**\
+A pattern where system state is derived from an append-only sequence of events. GATE replay and ledger mechanisms use event sourcing to reconstruct and validate behavior.
+
+**Evidence**\
+Artifacts that allow independent validation of enforcement and behavior: policy decisions, ledger events, signatures, replay traces, breaker triggers, approval records, and correlation IDs. Evidence must be retained and tamper-resistant according to tier.
+
+**HITL (Human-in-the-Loop)**\
+Governance mechanism that requires human approval for specified actions or risk thresholds. Implemented as explicit approval gates with signed decision records linked to policy and ledger evidence.
+
+**HITL Decision Record (Approval Record)**\
+A structured artifact proving an approval/denial occurred for an action: approver identity/role, request hash, policy decision reference, ORM score, conditions, signature, and ledger reference.
+
+**Idempotency Key**\
+A stable identifier used to ensure a tool action is executed at most once even if retries occur (prevents duplicate side effects).
+
+**Immutable Storage / WORM (Write Once Read Many)**\
+Storage configured so objects cannot be altered or deleted for a retention period. Used for audit logs and replay snapshots to prevent evidence tampering.
+
+**Injection (Prompt Injection / Indirect Injection)**\
+Techniques that cause an agent to treat untrusted content as instructions. Indirect injection commonly enters via retrieved documents, web pages, or tool outputs.
+
+**Invariant**\
+A rule that must always hold (e.g., "no funds transfer above X," "never delete records," "no external email to non-allowlisted domains"). In GATE, invariants are enforced by policy and optionally formal verification.
+
+**Ledger Integrity Verification**\
+A process that validates hash chain continuity and signature correctness in the audit ledger, producing integrity reports suitable for audit/forensics.
+
+**Memory Gateway**\
+The control-plane component that governs memory reads/writes (RAG, vector stores, state) using ACL/ABAC, schemas, provenance checks, TTL, and poisoning detection/quarantine.
+
+**Memory Poisoning**\
+Corruption of memory stores such that future behavior becomes unsafe or incorrect. Can be accidental (bad data) or malicious (injected instructions). GATE mitigates via provenance, validation, and quarantine.
+
+**mTLS (Mutual TLS)**\
+Bidirectional TLS authentication between services. Often used to secure service-to-service communication for GATE components and multi-agent messaging.
+
+**Non-Repudiation**\
+Cryptographic assurance that an entity performed an action (or approved it) and cannot plausibly deny it later. Achieved with signatures tied to workload identity and retained in immutable evidence.
+
+**Obligation (Policy Obligation)**\
+A required follow-up action attached to a policy decision (e.g., "require HITL," "sign action," "write ledger event," "perform verification"). Obligations must be enforced, not just logged.
+
+**OPA (Open Policy Agent) / Rego**\
+A common policy engine and language used to express policy-as-code. GATE is policy-engine agnostic but assumes deterministic external policy evaluation.
+
+**Orchestrator**\
+The control-plane component responsible for routing, scheduling, retries/backoff, DAG execution, version-aware rollout/rollback, and global backpressure. It coordinates distributed and multi-agent workflows.
+
+**ORM (Operational Risk Modeling)**\
+A real-time risk scoring mechanism that consumes signals from GATE controls (policy exceptions, anomaly detection, budget pressure, poisoning signals, divergence, etc.) and adjusts enforcement (auto-execute, require verification, require HITL, block).
+
+**Policy Bundle**\
+A versioned package of policies (e.g., Rego modules) deployed to the Tool Gateway/policy engine. Identified by policy_bundle_hash and referenced in evidence.
+
+**Prompt Bundle**\
+A versioned package containing system prompts, tool instructions, and configuration. Identified by prompt_bundle_hash. Typically stored securely; logs reference hashes, not plaintext.
+
+**Replay Snapshot**\
+An immutable capture of external tool responses (and optionally retrieved content) used for deterministic replay. Stored via snapshot pointers (snapshot_uri) and linked to replay traces.
+
+**Risk Tier (Tool Risk Tier)**\
+A classification for tools/actions (e.g., read-only, reversible write, irreversible write, financial, infrastructure). Used to drive policy, verification, HITL, and non-repudiation requirements.
+
+**Schema Validation (Tool Schema)**\
+Validation of tool inputs/outputs against versioned schemas to prevent ambiguous or malicious requests (avoids free-text tool calling). Tool schemas are hashed (tool_schema_hash) for evidence and replay.
+
+**Semantic Observability (Semantic Tracing)**\
+Structured telemetry capturing agent intent and decision categories (not raw chain-of-thought) correlated to policy decisions, tool invocations, ledger events, and replay traces.
+
+**SPIFFE / SPIRE**\
+Common standards and implementations for workload identity in distributed systems. Used to assign and verify short-lived identities for agent instances and GATE services.
+
+**Tool Gateway**\
+The enforcement boundary for tool execution. Authenticates identity, validates schemas, evaluates policy, enforces budgets, applies obligations (HITL, verification), signs actions, and emits evidence.
+
+**Tool Category**\
+A governance classification for tools based on consequence: read-only, reversible write, irreversible write, financial, infrastructure. Determines minimum controls and default policy posture.
+
+**Trace ID / Span ID**\
+Distributed tracing identifiers (commonly OpenTelemetry) used to correlate events across agent runtime, gateways, orchestrator, memory gateway, and downstream tools.
+
+**TTL (Time To Live)**\
+A retention constraint applied to memory records or evidence artifacts. Used to manage privacy, compliance, and poisoning blast radius.
+
+**Zero Trust**\
+A security posture where no workload is trusted by network location alone. Every request is authenticated, authorized, and attributable. In GATE, this applies to agent instances and all control-plane boundaries.

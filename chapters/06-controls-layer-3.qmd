@@ -1,3 +1,0 @@
-# Layer 3 - Observability and Forensics
-
-Placeholder. Control sections render from `v1.4/controls/Cxx-*.md` sources in Phase 2.

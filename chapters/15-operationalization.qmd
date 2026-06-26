@@ -1,0 +1,203 @@
+# Operationalization
+
+## Failure Behavior Defaults (Fail-Closed Matrix)
+
+GATE requires explicit failure behavior. When enforcement dependencies fail, the system MUST default to safe behavior based on tool category and tier.
+
+### Default rules
+
+- If identity verification fails: DENY all tool and memory operations (all tiers).
+
+- If schema validation fails: DENY the operation (all tiers).
+
+- If policy evaluation fails/unavailable:
+
+  - Read-only tools: MAY allow only if explicitly configured for degraded mode; otherwise DENY.
+
+  - Any write/financial/infrastructure tool: DENY.
+
+- If ledger durable commit is unavailable:
+
+  - High-privilege: DENY side-effecting tools (writes/financial/infrastructure).
+
+  - Bounded: MAY queue for durable commit with strict TTL and fail-closed on TTL expiry; irreversible actions require durable evidence before execution.
+
+- If HITL service is unavailable and approval is required by policy: DENY.
+
+These defaults are intentionally conservative; implementers may relax them only via explicit policy and tier configuration.
+
+## Minimum Controls by Autonomy Tier
+
+Use this table to define what's mandatory at each autonomy level. The goal is to scale governance with risk.
+
+Tier definitions
+
+- Sandbox: experiments, read-only or synthetic tools, no sensitive data, no production writes
+
+- Bounded: production read + limited writes with strict policy, budgets, and auditability
+
+- High-Privilege: financial / identity / production infrastructure / regulated data / irreversible actions
+
+## Minimum Mandatory Controls by Tier
+
+Legend: ✅ required, ⭕ conditional (depends on data sensitivity / tenant / environment), - not required
+
+  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  **GATE Control**                                      **Sandbox**   **Bounded**                  **High-Privilege**                       **Notes (enforcement expectation)**
+  ----------------------------------------------------- ------------- ---------------------------- ---------------------------------------- ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  C01 Workload Identity & Attestation                   ✅            ✅                           ✅                                       Mandatory everywhere; basis for attribution and revocation
+
+  C02 Confidential Execution & Secret Boundary          ⭕            ⭕/ ✅                       ✅                                       Required for high-sensitivity data or regulated workloads
+
+  C03 Artifact Integrity & Supply Chain                 ✅            ✅                           ✅                                       Signed images + policy/prompt bundles; no "latest"
+
+  C04 Agent Lifecycle Governance                        ⭕            ✅                           ✅                                       Inventory + decommission strongly recommended even in sandbox
+
+  C05 Tool Gateway + Policy-as-Code                     ✅            ✅                           ✅                                       Sandbox may allow "monitor-only" briefly, but enforce before any real tools
+
+  C06 Circuit Breakers & Emergency Stop                 ⭕            ✅                           ✅                                       Mandatory once tools can cause side effects or costs are material
+
+  C07 Resource Governance & Budgets                     ✅            ✅                           ✅                                       Sandbox needs cost caps to prevent runaway spend
+
+  C08 Injection Defence (Direct + Indirect)             ✅            ✅                           ✅                                       Mandatory anywhere untrusted input exists (almost always)
+
+  C09 Execution Constraints & Pre-Action Verification   ⭕            ✅                           ✅                                       Bounded requires invariant checks for write tools; high-privilege requires strict gating
+
+  C10 Deterministic Replay                              ⭕            ✅                           ✅                                       Mandatory for production and incident response; optional in early sandbox
+
+  C11 Verifiable Audit Ledger                           ⭕            ✅                           ✅                                       Bounded+ must have tamper-evident and immutable evidence
+
+  C12 Signed Actions & Non-Repudiation                  ⭕            ⭕/ ✅                       ✅                                       Mandatory for high-impact tools; recommended for bounded write tools
+
+  C13 Semantic Observability                            ✅            ✅                           ✅                                       Required for ops; sandbox may store less but keep structure
+
+  C14 Secure Multi-Agent Protocols                      ⭕            ⭕/ ✅                       ✅                                       Mandatory once more than one agent participates in workflows
+
+  C15 Orchestration Control Plane                       ⭕            ✅                           ✅                                       Mandatory when workflows are multi-step or distributed; optional for single-run sandbox
+
+  C16 Continuous Adversarial + Formal Verification      ⭕            ✅                           ✅                                       Bounded needs adversarial regression; high-privilege adds formal verification for critical invariants
+
+  C17 Agent Discovery and Shadow AI Detection                         ✅                           ✅                                       Observe-only acceptable as an interim posture for Sandbox tier. Bounded and High-Privilege MUST run in enforce mode with the termination path (IdP revocation + Tool Gateway deny + egress block) validated end-to-end. Untagged candidates are treated as immediate-termination at High-Privilege.
+
+  C18 Data Quality Gates                                              ✅ (freshness, confidence)   ✅ (freshness, confidence, provenance)   Bounded tier MUST enforce freshness and confidence gates; provenance MAY be flag-only at this tier. High-Privilege tier MUST enforce all three. Action matrix per content class is defined in the signed quality bundle.
+
+  C19 Model Behaviour Monitoring                                      ✅ (log-only minimum)        ✅ (full response routing)               Depends on C13. Bounded requires at minimum log-only drift decisions per dimension; flag-and-review is recommended. High-Privilege requires the full response router including tier reduction; halt via C06 is reserved for refusal-rate and per-tool-argument-distribution dimensions. Baselines MUST be tied to ABOM version.
+  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Tier enforcement notes
+
+- Sandbox is not "no controls." It still requires identity, policy boundaries, budgets, and injection defences because most incidents start in "experimentation" and then get promoted.
+
+- Bounded is the default enterprise tier: enforce tool gateway, breakers, budgets, immutable audit, and replay.
+
+- High-Privilege requires strong cryptographic guarantees (non-repudiation), confidential execution where data sensitivity demands it, strict verification gates, and continuous adversarial validation.
+
+## Performance Trade-offs & Tuning
+
+Implementing the full GATE suite introduces latency. Architects must balance the \"Latency Tax\" of verification against the risk profile of the agent. A fully blocking control loop (Request → Auth → Policy → Tool → Sign → Ledger → Response) can add 200ms--500ms per tool call.
+
+Tuning Patterns by Tier:
+
+- Synchronous Enforcement (High-Privilege Tier): All controls are blocking. The tool is not executed until the Policy Decision Record is signed, and the response is not returned to the model until the Audit Ledger commit is confirmed. Use this for financial or irreversible actions where correctness supersedes latency.
+
+- Asynchronous Evidence (Bounded/Sandbox Tier): Move the \"Evidence\" functions (C11 Ledger, C10 Replay recording) out of the critical path. The Gateway enforces Policy (allow/deny) synchronously but writes to the Audit Ledger and Replay Store asynchronously (eventual consistency).
+
+- **Critical Warning:** Asynchronous evidence introduces a risk of \"Phantom Actions\" (action succeeds, log fails). For **High-Privilege** tiers, evidence emission MUST be synchronous (Fail-Closed). If the Ledger is unreachable, the Tool Gateway must deny the action.
+
+- Storage Optimization (Payload vs. Hash): For Control 10 (Replay), full snapshot storage of large tool responses (e.g., \"read_emails\" returning 10MB of JSON) is cost-prohibitive.
+
+  - Optimization: For data-heavy read tools, store only the response_hash in the replay trace and rely on the source system\'s retention for data recovery, rather than duplicating the payload in the GATE trace store.
+
+### Sizing and SLO Guidance (Implementer Notes)
+
+GATE introduces predictable overhead at the enforcement boundary. Implementers should size and operate the control plane like any other low-latency, high-integrity middleware: capacity planning, SLOs, backpressure, and failure-mode defaults must be explicit.
+
+**Latency budgeting**
+
+- Define a per-tool-call budget for the synchronous path: Auth → Schema → Policy → Budget → (optional gate) → Execute.
+
+- Treat evidence writes as two classes:
+
+  - Synchronous evidence (required): policy decision record emission and correlation IDs
+
+  - Durable evidence (tier-dependent): ledger commit and replay snapshot durability
+
+- For bounded/high-privilege tiers, define an explicit SLO for "durable evidence latency" (e.g., ledger commit within N seconds) and ensure the system behaves safely while evidence is pending.
+
+**Throughput sizing (rule of thumb)**\
+\
+Let:
+
+- T = tool calls/sec (peak)
+
+- E = evidence events per tool call (decision + envelopes + ledger + observability + replay steps)
+
+Then expected event ingest is approximately:\
+\
+events/sec ≈ T × E\
+\
+Size the ledger, observability pipeline, and replay recorder for peak events/sec, not average traffic.
+
+**Storage growth (rule of thumb)**\
+\
+Let:
+
+- S = average evidence bytes per tool call (including snapshots if enabled)
+
+- N = tool calls/day
+
+Then daily evidence volume is approximately:\
+\
+bytes/day ≈ S × N\
+\
+Bound S by default via redaction/pointers for sensitive payloads and by enabling snapshots only where replay is required.
+
+**Backpressure**\
+\
+The orchestrator MUST enforce backpressure on:
+
+- queue depth
+
+- tool failure rates/retries
+
+- evidence pipeline lag
+
+- budget exhaustion
+
+Backpressure is not "best effort"; it is the primary mechanism preventing runaway loops and spend blowouts.
+
+## Minimum Controls by Tool Category 
+
+Use this table to operationalize controls at the boundary where it matters most: tool execution. The "minimum" assumes enterprise production usage; tighten further with ORM thresholds and local policy.
+
+Legend: ✅ required, ⭕ conditional (depends on data sensitivity / tenant / environment), - not required
+
+Notes:
+
+- C05 (Tool Gateway + PaC) is non-negotiable once tools touch real systems.
+
+- C11 + C10 become mandatory as soon as you need incident-grade defensibility (production).
+
+- C12 (Signed actions) is mandatory for any tool category where attribution and liability matter (financial, infrastructure, irreversible actions).
+
+- C16 (Formal verification) is the "high assurance" layer: start with a small set of hard invariants (limits, allowlists, forbidden states) and expand.
+
+- Apply ORM thresholds to dynamically require HITL or stronger verification as risk rises (e.g., higher transfer amounts, unusual destinations, abnormal tool patterns).
+
+## Operational Risk Modeling (ORM): The Autonomy Dial
+
+ORM converts GATE into a closed-loop governance system:
+
+1.  Measure: ingest signals from controls (policy, budgets, identity, poisoning detectors, observability)
+
+2.  Score: compute risk per run/action
+
+3.  Act: tighten enforcement (require verification/HITL) or block/kill
+
+4.  Audit: write decisions to ledger + enable deterministic replay
+
+Key idea: ORM does not replace policy; it changes *how strict* you are based on real-time risk.
+
+## Implementation Approach (Practical Phasing)
+
+The phased adoption path is defined in the Adoption Path section above. That section specifies the minimum control set for each phase, the exit criteria, and the placement of C17, C18, and C19 across phases. The phasing in this section has been superseded by the v1.3 adoption path.

@@ -1,0 +1,285 @@
+# Appendix: Cloud-by-Cloud Quickstart Architecture (AWS / Azure / GCP)
+
+Framework name: Governed Agent Trust Environment (GATE)\
+\
+Goal: provide a minimal, deployable architecture that implements GATE's core enforcement loop: Identity → Policy → Tools/Memory → Audit/Replay → Observability/HITL → ORM.\
+\
+Scope: a single-agent workflow plus a multi-agent-safe foundation. Vendor-neutral contracts; cloud-native building blocks.
+
+**Scope and parity note**
+
+This appendix provides minimal reference architectures for AWS, Azure, and GCP. The AWS quickstart is the most detailed reference implementation for this release. The Azure and GCP quickstarts follow the same control mapping and are functionally equivalent - implementers on those platforms should read the AWS section for additional implementation rationale and apply the equivalent services listed in each platform\'s BoM and configuration notes.
+
+## A. Minimal Reference Deployment (logical diagram)
+
+![Figure A.1 - Minimal Reference Deployment (logical). The cloud-agnostic GATE reference deployment. Agent runtime traffic flows through the GATE tool gateway and GATE memory gateway. The Memory Gateway invokes the C18 quality gate before content reaches the memory stores. The audit ledger and downstream evidence sinks form a tamper-evident chain. C17 discovery and C19 assurance operate as side planes that emit into the audit ledger.](../assets/images/figure-cloud-a-minimal-reference.png){#fig-cloud-a width="58%"}
+
+Minimum invariant: the agent never talks to tools or memory directly. Everything goes through GATE gateways.
+
+## B. Common Components (vendor-neutral contracts)
+
+### B1. Services you deploy (minimum viable GATE)
+
+1.  Tool Gateway: terminates identity, evaluates policy, enforces budgets, signs actions, emits audit events
+
+2.  Policy Engine: OPA/Rego bundle + decision logging (often embedded in the gateway)
+
+3.  Audit Ledger: hash-chains GATE events, writes to immutable/WORM storage
+
+4.  Replay Recorder: records deterministic traces + external tool response snapshots
+
+5.  Memory Gateway: retrieval-time ACL filtering, provenance, TTL, poisoning checks
+
+6.  Observability pipeline: OpenTelemetry collection + semantic trace schema
+
+7.  (Optional) HITL service: approval gates with signed decision records
+
+8.  (Optional) ORM scorer: risk score service that tightens/loosens enforcement dynamically
+
+### B2. Core data stores
+
+- Immutable audit sink (WORM/immutability)
+
+- Trace store (replay traces + snapshots)
+
+- Policy bundle store (versioned, signed)
+
+- Memory stores (vector retrieval + state DB)
+
+## C. AWS Quickstart (minimal concrete implementation)
+
+### C1. Minimal deployment diagram (AWS)
+
+![Figure C.1 - Minimal deployment diagram (AWS). The GATE tool gateway and memory gateway services run on EKS or ECS. The Memory Gateway invokes the C18 quality gate before retrieval reaches DynamoDB, S3, or OpenSearch. The audit ledger writes to S3 Object Lock (WORM); the replay recorder writes to S3; observability uses CloudWatch and OpenTelemetry. C17 discovery uses AWS Config, VPC Flow Logs, and Tool Gateway ingress. C19 consumes the C13 stream out of observability.](../assets/images/figure-cloud-c-aws.png){#fig-cloud-c width="48%"}
+
+### C2. AWS Bill of Materials (BoM)
+
+Compute
+
+- EKS (preferred) or ECS Fargate (agent runtime + GATE services)
+
+- Optional Lambda for lightweight gateway patterns
+
+Identity / Auth
+
+- IAM Roles + STS (short-lived)
+
+- EKS IRSA (OIDC workload identity for pods)
+
+- **Timestamping:** **AWS Signer** or a transparency log pattern to ensure signatures (Control 12) remain verifiable after the ephemeral IRSA identity expires.
+
+Network / Boundary
+
+- VPC + Private subnets
+
+- Security Groups / NACLs
+
+- PrivateLink (optional for tool endpoints)
+
+Policy
+
+- **Policy:** OPA (sidecar/embedded) OR **AWS Verified Permissions (Cedar)** for managed, scalable policy evaluation without managing OPA infrastructure.
+
+- Organizations SCPs (coarse guardrails for blast radius)
+
+Audit / Replay
+
+- CloudTrail (platform events)
+
+- GATE Audit Ledger → S3 Object Lock (WORM) + KMS
+
+- Trace store → S3 + DynamoDB index (or OpenSearch index)
+
+Observability
+
+- OpenTelemetry Collector
+
+- CloudWatch Logs/Metrics; X-Ray optional
+
+HITL / Workflow (optional)
+
+- Step Functions "approval gate" (callback) or custom approval service
+
+### C3. Minimal Terraform-ish sketch (conceptual)
+
+- EKS cluster + IRSA roles for agent-runtime, tool-gateway, memory-gateway
+
+- S3 buckets: dare-audit-worm (Object Lock), dare-traces
+
+- DynamoDB table: dare-trace-index
+
+- Deployments/services: gateway, ledger, replay recorder, otel collector
+
+## D. Azure Quickstart (minimal concrete implementation)
+
+### D1. Minimal deployment diagram (Azure)
+
+![Figure D.1 - Minimal deployment diagram (Azure). The GATE tool gateway and memory gateway services run on AKS. The Memory Gateway invokes the C18 quality gate before retrieval reaches Cosmos DB, Blob storage, or AI Search. The audit ledger writes to Blob immutability (WORM); the replay recorder writes to Blob; observability uses Azure Monitor and OpenTelemetry. C17 discovery uses Azure Policy, NSG Flow Logs, and Tool Gateway ingress. C19 consumes the C13 stream out of observability.](../assets/images/figure-cloud-d-azure.png){#fig-cloud-d width="48%"}
+
+### D2. Azure Bill of Materials (BoM)
+
+Compute
+
+- AKS (preferred) or Container Apps
+
+- Optional Azure Functions for gateway patterns
+
+- **Confidentiality:** **Azure Confidential Computing (ACC)** nodes (DCas/ECas series) for Control 02 (Confidential Execution) to protect model weights and memory in use.
+
+Identity / Auth
+
+- Microsoft Entra ID
+
+- Managed Identity / AKS Workload Identity (OIDC)
+
+Network / Boundary
+
+- VNet + private endpoints
+
+- NSGs + Azure Firewall (optional)
+
+- Private Link for sensitive services
+
+Policy
+
+- OPA (sidecar/embedded) + bundle in Blob
+
+- Azure Policy (baseline platform constraints)
+
+Audit / Replay
+
+- Azure Activity Logs (platform)
+
+- GATE Audit Ledger → immutable Blob (immutability policy)
+
+- Trace store → Blob + Cosmos DB index (optional)
+
+Observability
+
+- Azure Monitor + Log Analytics + Application Insights
+
+- OpenTelemetry Collector
+
+HITL / Workflow (optional)
+
+- Logic Apps approvals or Durable Functions approval gates
+
+- Custom approval UI/service
+
+**Azure minimal configuration notes**
+
+- **Workload identity (C01):** Use Azure Workload Identity Federation with AKS to mint short-lived tokens bound to Kubernetes service accounts. Avoid pod-level managed identity assignments - scope identity to the agent workload specifically.
+
+- **Policy enforcement (C05):** Deploy OPA as a sidecar or use Azure API Management with custom policy expressions as the Tool Gateway intercept point. Azure Policy alone is insufficient - it governs resource provisioning, not runtime tool call enforcement.
+
+- **Confidential execution (C02):** Use Azure Confidential VMs (DCsv3/DCdsv3 series with Intel TDX) or Azure Kubernetes Service with confidential node pools for high-privilege tier workloads.
+
+- **Audit ledger (C11):** Write hash-chained ledger events to Azure Immutable Blob Storage with time-based retention locks. Use Azure Event Hub as the ingestion pipeline with a consumer that enforces the hash chain before committing to immutable storage.
+
+- **Replay snapshots (C10):** Store snapshot objects in Azure Blob Storage with object immutability enabled. Use storage lifecycle policies to transition to cool/archive tier after the hot retention window.
+
+- **Circuit breakers (C06):** Implement break-glass stop via Azure API Management policy to revoke the agent\'s managed identity token and deny subsequent requests at the gateway layer.
+
+## E. GCP Quickstart (minimal concrete implementation)
+
+### E1. Minimal deployment diagram (GCP)
+
+![Figure E.1 - Minimal deployment diagram (GCP). The GATE tool gateway and memory gateway services run on GKE. The Memory Gateway invokes the C18 quality gate before retrieval reaches Firestore, GCS, or BigQuery. The audit ledger writes to GCS retention and immutability; the replay recorder writes to GCS; observability uses Cloud Logging, Monitoring, and OpenTelemetry. C17 discovery uses GCP Asset Inventory, VPC Flow Logs, and Tool Gateway ingress. C19 consumes the C13 stream out of observability.](../assets/images/figure-cloud-e-gcp.png){#fig-cloud-e width="48%"}
+
+### E2. GCP Bill of Materials (BoM)
+
+Compute
+
+- GKE (preferred) or Cloud Run (gateway services)
+
+Identity / Auth
+
+- Workload Identity (GKE)
+
+- Service Account impersonation (short-lived)
+
+- **Supply Chain:** **Binary Authorization** to enforce Control 03 (Artifact Integrity), ensuring only signed/attested agent images can launch.
+
+Network / Boundary
+
+- VPC + firewall rules
+
+- Private Service Connect / VPC Service Controls (where applicable)
+
+Policy
+
+- OPA + signed bundles (GCS)
+
+- Org Policy Constraints (coarse constraints)
+
+Audit / Replay
+
+- Cloud Audit Logs (platform)
+
+- GATE Audit Ledger → GCS with retention/immutability patterns
+
+- Trace store → GCS + BigQuery/Firestore index
+
+Observability
+
+- Cloud Logging/Monitoring + Cloud Trace
+
+- OpenTelemetry Collector
+
+HITL / Workflow (optional)
+
+- Workflows approval gate (Pub/Sub/Tasks pattern)
+
+- Custom approval UI/service
+
+**GCP minimal configuration notes**
+
+- **Workload identity (C01):** Use GKE Workload Identity to bind Kubernetes service accounts to IAM service accounts. Use short-lived tokens via the GCP Security Token Service; avoid downloading long-lived key files.
+
+- **Policy enforcement (C05):** Deploy OPA as a sidecar within the agent pod, or use Apigee as the Tool Gateway intercept layer for managed API enforcement.
+
+- **Confidential execution (C02):** Use Confidential GKE Nodes (AMD SEV) for high-privilege tier workloads. Combine with VPC Service Controls to prevent data exfiltration at the network boundary.
+
+- **Audit ledger (C11):** Write ledger events to BigQuery with column-level access controls for sensitive fields. Use GCS Coldline with bucket lock (object retention policy) as the WORM-compliant immutable sink for cold storage.
+
+- **Replay snapshots (C10):** Store snapshot objects in GCS with object holds enabled. Use a separate storage bucket with uniform bucket-level access and retention lock distinct from the hot analytics store.
+
+- **Circuit breakers (C06):** Implement break-glass stop by revoking the agent workload\'s IAM binding via the IAM API. Combine with VPC firewall rule updates to block tool egress at the network layer for immediate containment.
+
+## F. Minimal "Day-1" Configuration (works across clouds)
+
+### F1. Required policies (starter set)
+
+- Deny side-effecting tools unless explicitly allowlisted
+
+- Require: agent_identity_attested == true for privileged tools
+
+- Enforce budgets: tokens/tool calls per run
+
+- Require signing for high-impact actions
+
+- Require audit ledger write success before returning "approved"
+
+### F2. Required logging (starter set)
+
+- agent.tool_request (pre-policy)
+
+- policy.decision (allow/deny + obligations + policy hash)
+
+- tool.invocation (request hash + response hash + timing)
+
+- memory.read/write (ACL decision + provenance)
+
+- audit.commit (hash chain pointers)
+
+- replay.snapshot (tool response snapshot pointers)
+
+### F3. Required operational runbooks
+
+- Kill switch playbook: revoke identity + cut network + freeze trace
+
+- Poisoning playbook: quarantine memory partition + invalidate provenance chain
+
+- Cost anomaly playbook: throttle budgets + require HITL temporarily
+
+- Incident replay playbook: rehydrate trace + reproduce + patch + regress

@@ -1,3 +1,82 @@
-# Changelog {.unnumbered}
+# Changelog {#sec-changelog}
 
-Placeholder. The v1.4 changelog is written in Phase 3.
+## Changes since v1.2.8
+
+
+v1.3 expands GATE\'s scope in three deliberate directions. The previous version assumed the population of agents was known, the retrieved content was usable, and the underlying model was stable across time. None of those assumptions is safe in production. v1.3 makes the first explicit as a scope statement and adds dedicated controls for the second and third.
+
+The existing 16 controls are unchanged in number, layer placement, and intent. Three additions modify them only at the edges: C04 gains a Discovered lifecycle state to receive C17 candidates, C08 carries a Failure-Modes cross-reference to C18 and the Memory flow scope note, and C10 carries a single clarifying sentence on the Determinism scope. The numbering of C01-C16 is preserved.
+
+New controls
+
+- C17 Agent Discovery and Shadow AI Detection (Layer 1). Continuous discovery of agent-like behaviour across the governed environment, classification of candidates, and a deterministic enrol-or-terminate path that feeds C04. Closes the assumption that the C01-C16 control plane has anything to say about agents it has never seen.
+
+- C18 Data Quality Gates (Layer 2). Retrieval-time minimum quality gates inside the Memory Gateway covering freshness, confidence, and provenance. Closes the gap that allowed an agent to pass every GATE check while operating on stale, low-confidence, or unverifiable retrieved content.
+
+- C19 Model Behaviour Monitoring (Layer 3). Continuous statistical comparison of production behaviour against a signed baseline tied to the ABOM. Distinct from C16 (event-driven and adversarial); C19 detects gradual distribution drift, C16 detects attacks. The two are required as a pair for high-privilege tier.
+
+Scope statements made explicit
+
+- Enrolment assumption (Scope section). GATE governs agents that are enrolled in the control plane. It does not substitute for network-level discovery of shadow or rogue agents. See C17.
+
+- Memory flow scope note (Reference Architecture). The Memory Gateway is an access-control and provenance boundary, not a data-quality boundary. See C18.
+
+- Drift vs adversarial assurance. C16 detects adversarial events. C19 detects gradual statistical drift. These are emitted as distinct ledger event types (gate.assurance.adversarial_outcome vs gate.assurance.drift_decision) and have separate response runbooks. They must not be merged.
+
+Existing controls touched
+
+- C04 Agent Lifecycle Governance. The state machine adds a Discovered entry state that receives C17 discovery events. Discovered transitions to Commissioned on enrolment or to Terminated on TTL expiry. No agent can move directly to Run without traversing Discovered or being Commissioned via a declared path.
+
+- C08 Prompt and Content Injection Defence. Failure-Modes list gains a bullet: treating C08 as a quality gate for retrieved content is a failure mode, with the cross-reference to C18 and the Memory flow scope note.
+
+- C10 Deterministic Replay. Determinism scope paragraph gains a closing sentence: retrieved-context hashes confirm what was retrieved, not whether the retrieved content was accurate or current.
+
+Adoption Path updates
+
+- Phase 1 adds C17 in observe-only mode as a minimum requirement.
+
+- Phase 2 promotes C17 to enforce mode, and adds C18 in flag-only mode with enforce for at least one production content class.
+
+- Phase 3 adds C19 (depends on C13 from Phase 2) and promotes C18 to full enforce for high-privilege tier.
+
+Exit criteria for each phase are updated accordingly.
+
+Alignment table changes
+
+- NIST AI RMF alignment table: C17 maps to GOVERN and MAP; C18 maps to MEASURE and MANAGE; C19 maps to MEASURE and MANAGE.
+
+- ISO/IEC 42001 alignment table: C17 maps to A.6.2.2 and A.6.1.1; C18 maps to A.7.4 and A.7.5; C19 maps to A.9 and A.8.2.
+
+- Minimum Mandatory Controls by Tier matrix adds rows for C17, C18, C19. Sandbox tier is optional for all three. Bounded tier requires C17 enforce, C18 freshness and confidence, and C19 log-only minimum. High-privilege tier requires full enforcement of all three.
+
+Control plane contracts (gate-contracts)
+
+New schemas: agent_discovered.schema.json, agent_remediation_outcome.schema.json, quality_decision.schema.json, behavioural_baseline.schema.json, drift_decision.schema.json, response_action.schema.json.
+
+Schema extensions: agent_state.schema.json gains the Discovered state and an optional discovered_from field; memory_item.schema.json gains required fields content_class, provenance_uri, provenance_hash, confidence_score, created_at; memory_request.schema.json gains optional quality_override; memory_response.schema.json gains quality_flags and quality_decision_id; abom.schema.json gains optional current_baseline_hash.
+
+New ledger event types: gate.discovery.agent_discovered, gate.discovery.agent_remediation_outcome, gate.memory.quality_decision, gate.assurance.drift_decision, gate.assurance.response_action. A normative note in event_types.yaml clarifies the C16/C19 boundary.
+
+Policies (gate-policies) and reference library (gate-python)
+
+Three new Rego files (none added to tool_gateway_baseline.rego): policies/discovery/c17_discovery.rego, policies/memory/c18_quality.rego, policies/assurance/c19_drift_response.rego. Three new Python modules: gate/discovery/\_\_init\_\_.py, gate/memory/quality.py, gate/assurance/behaviour.py.
+
+What did not change
+
+- The 4-layer architecture is unchanged. C17 joins Layer 1, C18 joins Layer 2, C19 joins Layer 3.
+
+- The control specification format (Why / What / How / Evidence / Failure Modes) is unchanged and applied to C17, C18, C19.
+
+- The Fail-Closed Matrix is unchanged. Identities that fail C17 discovery default to deny at the Tool Gateway via the new c17 Rego rule, which is consistent with the existing default-deny posture.
+
+- The conformance model remains manual self-assessment pending the conformance runner.
+
+Recommended migration order from v1.2.8
+
+1.  Adopt C17 in observe-only and measure the discovered-but-unenrolled population. Many organisations find this population is materially larger than the C04 inventory; resolve the delta before promoting C17 to enforce.
+
+2.  Adopt the C08, C10, and Memory flow scope statements. These are documentation changes and do not require code changes, but internal scope statements and audit narratives should be updated to match.
+
+3.  Adopt C18 in flag-only mode after C10 and C13 are at Phase 2 levels. Promote per content class.
+
+4.  Adopt C19 after C13 is at the required coverage level and C16 is operational. Baseline against the current ABOM and treat the first re-baselining trigger as a controlled rollout exercise.

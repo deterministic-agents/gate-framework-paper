@@ -1,0 +1,22 @@
+# Appendix: Standard Mappings (Informative)
+
+**Purpose and disclaimer**
+
+This appendix provides an informative mapping from GATE controls to widely used governance frameworks to help security and GRC teams align implementation evidence. This mapping is a guide for alignment and does not imply certification or formal compliance.
+
+## GATE Controls → NIST AI RMF (GOVERN / MAP / MEASURE / MANAGE)
+
+The table below maps GATE's control catalog to the [NIST AI Risk Management Framework](https://www.nist.gov/itl/ai-risk-management-framework) (National Institute of Standards and Technology, 2023) (AI RMF) functions - GOVERN, MAP, MEASURE, and MANAGE - to support evidence alignment and review workflows.
+
+The mapping is intent-based: it shows where each GATE control most directly contributes to risk governance, context understanding, measurement/monitoring, and operational risk treatment. Because NIST AI RMF is outcome-oriented and GATE is implementation-oriented, a single GATE control may align to multiple functions; the primary function listed reflects the control's dominant operational role.\
+\
+v1.3 extends this mapping to include C17 Agent Discovery and Shadow AI Detection (inventory completeness), C18 Data Quality Gates (retrieval-time quality enforcement), and C19 Model Behaviour Monitoring (drift detection).
+
+## GATE Controls → ISO/IEC 42001 Alignment (High-level themes)
+
+ISO/IEC 42001 is a management system standard. The mapping below ties GATE controls to typical management system themes: governance, risk management, operational controls, monitoring, incident response, and continual improvement.\
+\
+v1.3 extends this mapping to include C17 Agent Discovery and Shadow AI Detection (inventory completeness), C18 Data Quality Gates (retrieval-time quality enforcement), and C19 Model Behaviour Monitoring (drift detection).
+
+**Implementation note:** Enterprises typically adopt GATE controls as "technical controls" under broader management system processes (risk assessment, change control, incident response). The conformance checks and evidence schemas in this framework are designed to support these broader governance requirements without requiring vendor-specific tooling.
+

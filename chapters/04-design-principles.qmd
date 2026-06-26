@@ -1,0 +1,169 @@
+# Design Principles
+
+This section defines the invariants that an implementation must satisfy for the GATE control plane to be meaningful. These are engineering constraints: they identify where enforcement must occur, how authority is separated from model output, and what evidence must exist to validate behavior.
+
+An implementation that violates these principles will typically exhibit one or more of:
+
+- unenforceable policy,
+
+- bypassable controls,
+
+- unattributable actions,
+
+- or irreproducible incidents.
+
+## Principles
+
+### Zero trust for agents
+
+Invariant: No agent runtime is trusted by location, network, or "internal" status.
+
+Requirements
+
+- Each agent instance MUST have a unique, short-lived workload identity.
+
+- Each privileged request (tool execution, memory read/write, orchestration transition) MUST be authenticated and authorized at the boundary.
+
+- Identity MUST be revocable with immediate effect on tool/memory access.
+
+Enforcement points
+
+- Tool Gateway, Memory Gateway, Orchestrator
+
+Operational check
+
+- 100% of tool/memory requests include verified agent_instance_id and attestation status.
+
+### Deterministic boundaries
+
+Invariant: The model is not an enforcement layer. The control plane is.
+
+Requirements
+
+- The agent runtime MAY propose actions; it MUST NOT directly execute side-effecting operations.
+
+- Tool and memory operations MUST pass through deterministic enforcement components (schema validation, policy evaluation, invariants, budgets).
+
+- There MUST be no bypass path (network, IAM, SDK) that allows direct access to tools/memory outside the control plane.
+
+Enforcement points
+
+- Tool Gateway, Memory Gateway, network policy, IAM
+
+Operational check
+
+- 0% tool calls originate from agent runtime identities; 100% originate from gateway identity.
+
+### Defence in depth
+
+Invariant: No single mechanism is assumed correct or sufficient.
+
+Requirements
+
+- High-impact actions MUST require multiple independent gates (e.g., policy allow + invariant check + budget available + optional approval).
+
+- Controls MUST be layered across boundaries: identity, tool execution, memory, orchestration, and evidence integrity.
+
+- Where one control is probabilistic (e.g., injection detection), at least one downstream control MUST be deterministic (e.g., policy deny, invariant gate).
+
+Enforcement points
+
+- Tool Gateway (policy + schema + budgets), Orchestrator (backpressure), Ledger (immutability), Replay (reproducibility)
+
+Operational check
+
+- For each high-impact tool category, document at least two independent enforcement controls and verify they execute on every request.
+
+### Separation of duties
+
+Invariant: The component that proposes an action is not the component that authorizes it.
+
+Requirements
+
+- Safety decisions MUST be made by services outside the agent runtime (policy engine, verifier, approval service).
+
+- The agent runtime MUST NOT be able to modify enforcement policy, disable logging, or change evidence retention.
+
+- Administrative controls (policy changes, allowlist updates, bypass approvals) MUST be gated by separate identities and change controls.
+
+Enforcement points
+
+- Policy engine deployment pipeline, gateway runtime configuration, secrets and identity system
+
+Operational check
+
+- Agent runtime has no write access to policy bundles, ledger configuration, or evidence stores.
+
+### Evidence-first operations
+
+Invariant: Safety claims must be testable and auditable.
+
+Requirements
+
+- Every tool execution attempt MUST emit a policy decision record (allow/deny + obligations + hashes).
+
+- For bounded/high-privilege tiers, governed actions MUST be recorded in a tamper-evident ledger with immutable retention.
+
+- Deterministic replay MUST be possible at the tool/memory boundary using captured request/response hashes and snapshots for required tiers.
+
+Enforcement points
+
+- Tool Gateway (decision record emission), Ledger service, Replay recorder
+
+Operational check
+
+- Given a run_id, it must be possible to retrieve: decision records, tool envelopes, ledger references, and replay trace steps.
+
+### Composability
+
+Invariant: Controls are defined by contracts so implementations can be swapped without changing guarantees.
+
+Requirements
+
+- Control plane components MUST communicate via versioned schemas (tool envelopes, decision records, ledger events, replay traces, agent message envelopes).
+
+- Control interfaces MUST support correlation (run_id, trace_id) and integrity (request_hash, response_hash, bundle hashes).
+
+- Implementations MAY vary by vendor/stack, but MUST pass conformance checks defined by this framework.
+
+Enforcement points
+
+- Contracts layer (schemas), conformance test harness
+
+Operational check
+
+- Conformance suite validates the same invariants across different implementations.
+
+### Fail closed for side-effecting actions
+
+Invariant: If enforcement cannot be performed, side effects do not occur.
+
+Requirements
+
+- If policy evaluation, identity verification, invariant checks, or required evidence emission fails, side-effecting tool calls MUST be denied.
+
+- Degraded operation modes (if any) MUST be explicitly defined per tier (e.g., read-only allowed, writes denied).
+
+Operational check
+
+- Chaos tests: policy engine unavailable → writes denied; ledger sink unavailable in high-privilege → writes denied.
+
+### Least privilege by capability
+
+Invariant: Agents have only the minimal set of allowed actions, scoped by context.
+
+Requirements
+
+- Tools MUST be allowlisted per agent and per tier.
+
+- Access MUST be scoped by tenant, environment, time, and data partitions.
+
+- High-impact tools MUST require explicit capability grants and tighter budgets.
+
+Operational check
+
+- Inventory shows tool allowlists per agent; no agent has wildcard permissions for high-risk tool categories.
+
+##  Principle Evidence Reference Table
+
+Each principle states (1) the required property, (2) where it is enforced, and (3) how to test it.

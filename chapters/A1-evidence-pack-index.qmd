@@ -1,0 +1,123 @@
+# Appendix: Evidence Pack Index (GATE)
+
+This index defines the minimum evidence artifacts a GATE implementation must produce, where they are stored, and how they are correlated. "Evidence" is designed to support three workflows: audit, incident response, and continuous conformance.
+
+## A. Retention posture (profiles)
+
+Retention must be configurable by policy, data classification, and regulatory requirements. GATE provides profiles to standardize defaults.
+
+Profile 1 - Enterprise baseline (recommended default)
+
+- Hot (fast access): 365 days in an analytics/query store (e.g., BigQuery)
+
+- Cold (archive): 6 years in object storage with retention lock / immutability controls
+
+- Total: 7 years
+
+Profile 2 - Regulated / high-privilege
+
+- Hot: 365 days
+
+- Cold: 7+ years (set by legal/regulatory requirements)
+
+- Stronger access controls; additional encryption and key governance; tighter snapshot minimization and explicit PHI/ePHI handling.
+
+Profile 3 - Development / sandbox
+
+- Hot: 30--90 days
+
+- Cold: optional
+
+- Side-effecting tools should still be blocked or strictly bounded; do not treat "sandbox" as "no evidence."
+
+Implementers MUST declare the retention profile used for each environment and tier and include it in conformance reports.
+
+## B. Global evidence requirements (applies to all artifacts)
+
+Every artifact listed below MUST include (or be linkable via):
+
+- run_id, trace_id, agent_instance_id, tenant_id, environment
+
+- policy_bundle_hash, prompt_bundle_hash (or prompt pointer), tool_schema_hash
+
+- request_hash and response_hash for tool/memory boundary events
+
+- immutable pointer for high-value evidence (WORM retention class)
+
+**Canonical serialization rule:** All hashes/signatures MUST be computed over canonical JSON to ensure consistent verification across implementations.
+
+## C. Evidence pack contents
+
+**Retention classes used below**
+
+- **Hot:** prod_hot_365d (BigQuery or equivalent)
+
+- **Cold:** prod_cold_6y_worm (GCS Coldline/Archive with retention lock + immutability + access logs)
+
+- **Sandbox (optional):** sandbox_hot_30d (lower-risk experimentation only)
+
+  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  **Evidence artifact**                                               **Produced by**                **When generated**                                 **Hot store (365d)**        **Cold store (6y)**                       **Notes / minimum integrity controls**
+  ------------------------------------------------------------------- ------------------------------ -------------------------------------------------- --------------------------- ----------------------------------------- ------------------------------------------------------------------------------------------------------------------
+  **Policy Decision Record** (\*.policy.decision)                     Tool Gateway / Policy Engine   Every tool attempt (allow/deny/obligations)        BigQuery                    GCS Coldline/Archive                      Must include decision_id, request_hash, policy_bundle_hash; export to immutable archive for bounded+
+
+  **Tool Request Envelope** (\*.tool.request)                         Tool Gateway                   Every tool call request                            BigQuery                    GCS Coldline/Archive                      Store **payload hash** by default; optionally store redacted payload; sensitive payloads should be pointer-based
+
+  **Tool Response Envelope** (\*.tool.response)                       Tool Gateway                   Every tool call response                           BigQuery                    GCS Coldline/Archive                      Must include response_hash, status, duration, and snapshot pointer for high-impact tools
+
+  **Tool Response Snapshots** (immutable objects)                     Replay Recorder / Gateway      For high-impact tools; optional for low risk       Optional index only         GCS Coldline/Archive                      Immutable snapshots for replay; encrypt; strict access controls
+
+  **Memory Read/Write Decisions** (\*.memory.read, \*.memory.write)   Memory Gateway                 Every memory operation                             BigQuery                    GCS Coldline/Archive                      Must prove **retrieval-time authorization** decisions and provenance checks
+
+  **Memory Quarantine Events** (\*.memory.quarantine)                 Memory Gateway                 On suspected poisoning                             BigQuery                    GCS Coldline/Archive                      Must include cause codes, affected partitions, provenance refs
+
+  **Audit Ledger Events** (\*.ledger.event)                           Audit Ledger Service           For governed actions/decisions                     BigQuery (index/metadata)   GCS Coldline/Archive (WORM)               Hash-chained + signed; immutable retention is mandatory for bounded+
+
+  **Ledger Integrity Reports**                                        Ledger Verifier                Scheduled + on-demand                              BigQuery (summary)          GCS Coldline/Archive (WORM)               Daily/weekly verification; produce PASS/FAIL and gaps
+
+  **Replay Trace** (trace YAML/JSON)                                  Replay Recorder                Every run (bounded/high)                           BigQuery (index/summary)    GCS Coldline/Archive                      Must capture bundles, seeds/config, tool/memory hashes, snapshot pointers
+
+  **Semantic Trace Events** (\*.semantic.\*)                          Observability Pipeline         Each boundary step (intent, decisions, outcomes)   BigQuery                    Optional cold                             Should be **non-sensitive summaries**; avoid raw chain-of-thought
+
+  **Breaker Trigger Events** (\*.breaker.trigger)                     Tool Gateway / Orchestrator    On threshold breach                                BigQuery                    GCS Coldline/Archive                      Must include threshold, cause codes, and containment outcome
+
+  **Budget / Quota Events** (\*.budget.\*, \*.quota.\*)               Gateway / Orchestrator         On consumption + enforcement                       BigQuery                    Optional cold                             Export to cold if required for audit trails or investigations
+
+  **HITL Decision Record** (approval record)                          HITL Service                   On approve/deny/modify                             BigQuery                    GCS Coldline/Archive (WORM recommended)   Must be signed and linked to request_hash + policy_decision_id
+
+  **Signed Action Proofs** (signature metadata)                       Gateway / Protocol Layer       For high-impact actions/messages                   BigQuery                    GCS Coldline/Archive                      Includes key ID, signature, verification result, ledger ref
+
+  **Conformance Report**                                              Conformance Runner             Scheduled (daily/weekly)                           BigQuery                    GCS Coldline/Archive                      Summarizes must-pass checks, exceptions, and evidence pointers
+  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## **D. Minimum evidence pack by autonomy tier**
+
+**Sandbox (lowest risk):**
+
+- Required: Policy decision records, tool request/response envelopes (hash-based), semantic traces, budgets/quota events
+
+- Optional: ledger + replay (enable if sandbox touches real internal systems)
+
+**Bounded (default enterprise production):**
+
+- Required: everything above + verifiable audit ledger + replay trace + breaker events
+
+- Snapshots required for high-impact tools and incident-prone workflows
+
+**High-Privilege (regulated / high consequence):**
+
+- Required: bounded tier evidence + signed actions + HITL decision records (where policy obligates) + formal verification artifacts where applicable
+
+## **E. Evidence correlation rules (must work in queries)**
+
+A reviewer must be able to traverse the evidence chain:
+
+- From tool.response → policy.decision_id → ledger_event_id → replay_trace_step
+
+- From HITLDecisionRecord.approval_id → policy.decision_id → matching request_hash → ledger_event_id
+
+- From semantic_event.audit_ref → ledger_event_id → tool/memory hashes and snapshot pointers
+
+## **F. One-line rationale (for reviewers)**
+
+We retain governance evidence for 1 year hot for operational response and analytics, and 6 years cold to maintain a 7-year total retention baseline suitable for regulated environments and long-tail investigations.

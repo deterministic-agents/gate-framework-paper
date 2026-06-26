@@ -1,0 +1,308 @@
+# Layer 3 - Observability and Forensics Controls {#sec-layer-3}
+### Control 10 - Deterministic Replay {#sec-c10}
+
+**Why**\
+If you can't replay, you can't debug reliably, prove causality, or validate mitigations.\
+\
+Non-determinism becomes operational chaos.
+
+**What**
+
+A replay trace that captures all non-determinism:
+
+- model ID/version
+
+- prompt bundle hash and tool schema hash
+
+- temperature/seed
+
+- retrieved context hashes
+
+- tool requests/responses snapshots
+
+- orchestration routing decisions
+
+**Determinism scope:** Deterministic replay in GATE is defined at the governed execution boundary (tools and memory). Replay reproduces the run by reusing recorded snapshots and pinned bundles, ensuring the same request_hash/response_hash pairs and equivalent side-effect outcomes. This does not require identical token-by-token model output across providers unless model versions and execution conditions are fully pinned. Retrieved-context hashes recorded in the replay trace confirm what was retrieved at runtime, not whether the retrieved content was accurate or current. Replay reproduces the agent's behaviour given the same inputs; it does not validate the inputs. See C18 (Data Quality Gates) for the retrieval-time quality boundary.
+
+**How**
+
+- write trace events as an append-only stream
+
+- snapshot external tool responses (or store pointers to immutable snapshots)
+
+- build a replay harness that stubs tool calls with recorded responses
+
+**Architect's Note - Replay cold start (expired identity/policy)**\
+\
+GATE replay is defined as "no live dependencies," which includes control-plane dependencies that may change over time. A replay executed months later MUST NOT fail due to expired tokens, rotated keys, or updated policy bundles. The replay harness therefore MUST provide local mocks (or recorded fixtures) for:
+
+- Identity Provider / Attestation verification: return the recorded workload identity claims and attestation status for the run being replayed (verification must succeed against recorded evidence, not current tokens).
+
+- Policy Engine evaluation: replay MUST use the recorded policy_bundle_hash and decision fixtures (or a policy engine loaded with the archived bundle) so decisions reproduce independently of current policy state.
+
+Normative requirement: Replay execution must validate authenticity by verifying recorded signatures and hashes (decision records, ledger events, request/response hashes) rather than requiring live token refresh or current IAM state.
+
+**Evidence**
+
+- replay success rate
+
+- mean time to reproduce an incident
+
+- regression tests built from incident traces
+
+**Failure Modes**
+
+- missing tool outputs (replay diverges)
+
+- replay uses live external dependencies
+
+- model/prompt versions not pinned
+
+### Control 11 - Verifiable Audit Ledger {#sec-c11}
+
+**Why**\
+Mutable logs are not defensible. Compromised workloads can erase evidence.
+
+**What**\
+A tamper-evident ledger that:
+
+- hash chains events
+
+- signs ledger commits
+
+- stores outputs in immutable retention
+
+**How**
+
+- ledger service computes event_hash and prev_event_hash
+
+- store ledger head pointers in immutable storage
+
+- periodically run integrity checks and produce verification reports
+
+**Evidence**
+
+- integrity reports and hash chain validation
+
+- immutable retention configuration proof
+
+- completeness checks: expected events vs observed events
+
+**Failure Modes**
+
+- relying on standard logs only
+
+- no cryptographic linkage between events
+
+- retention policies that purge needed evidence
+
+- **Toxic Immutable Data:** Storing PII/PHI in WORM storage creates a compliance deadlock (cannot delete vs. must delete).
+
+- **Mitigation:** Implement **Crypto-Shredding**. Encrypt sensitive payload snapshots with ephemeral keys managed in a separate KMS. To comply with deletion requests, destroy the key, leaving the immutable ledger entry intact but unreadable.
+
+### Control 12 - Signed Actions and Non-Repudiation {#sec-c12}
+
+**Why**\
+You must be able to prove which agent performed a critical action, with what authorization.\
+\
+This is accountability and legal defensibility.
+
+**What**\
+Digital signatures applied to:
+
+- high-impact tool invocations
+
+- approval and override decisions
+
+- inter-agent messages (C14)
+
+**How**
+
+- derive per-agent signing keys from workload identity where possible
+
+- sign payload hashes, not raw payloads (reduces sensitive leakage)
+
+- store signature metadata for future verification across rotations
+
+**Evidence**
+
+- signature coverage rate (% high-impact actions signed)
+
+- verification failures and root-cause
+
+- dispute resolution proof paths
+
+**Failure Modes**
+
+- signing without secure key management
+
+- signatures not checked by recipients
+
+- unsigned emergency/admin paths
+
+### Control 13 - Agent-Native Observability and Semantic Tracing {#sec-c13}
+
+**Why**\
+You need "why" telemetry, not just "what happened."\
+\
+But storing raw chain-of-thought is risky. The right balance is structured semantic traces.
+
+**What**\
+A standard semantic event model that captures:
+
+- intent summaries
+
+- decision categories (tool choice class, risk band)
+
+- links to policy decisions, ledger events, and replay trace IDs
+
+- anomaly indicators and confidence proxies (without raw CoT)
+
+**How**
+
+- propagate trace IDs across agent, gateway, tools, memory
+
+- emit semantic events at each boundary step
+
+- build dashboards: tool mix, denial rates, anomaly rates, divergence between versions
+
+**Evidence**
+
+- trace completeness and correlation metrics
+
+- anomaly detection precision/recall (from test suite)
+
+- operational dashboards linked to run IDs
+
+**Failure Modes**
+
+- logging raw sensitive prompts/reasoning
+
+- unstructured logs that can't be correlated
+
+- lack of redaction and classification in telemetry
+
+### Control 19 - Model Behaviour Monitoring {#sec-c19}
+
+**Layer 3 - Observability and Forensics Controls**
+
+Placement rationale: C19 sits in Layer 3 alongside C13 (semantic observability) and C16 (continuous adversarial validation) because it is a continuous, statistical observation of model behaviour over time. The distinction from C16 is preserved deliberately and stated explicitly below. C13 captures intent telemetry on a per-run basis. C16 runs an adversarial harness against known attack scenarios. C19 watches the distribution of model behaviour against a baseline and flags statistically significant drift without requiring an adversarial trigger.
+
+**Why**
+
+Without this control, a well-governed agent produces increasingly poor decisions as the underlying model shifts, and the failure is invisible to every other GATE control. The model has not been attacked. The supply chain is intact (C03). The identity is valid (C01). The policy decisions are correct given the inputs (C05). The invariants hold (C09). The replay reproduces (C10). The signatures verify (C12). The adversarial harness passes (C16). And the agent's outputs are worse this month than they were last month.
+
+This happens through several routes. A model provider updates a base model under the same version identifier - some providers do this, some do not, and the boundary is not always documented. A fine-tuning run that was supposed to be a minor adjustment shifts the behaviour distribution unexpectedly. A change in upstream tokenisation, sampling parameters, or default temperature alters output distributions without any change to the prompt bundle. A change in the retrieved-context distribution (more or fewer documents, different sources passing the C18 gate) shifts the prompts the model sees in production even when the model itself is stable.
+
+The shared property of all these routes is that they are gradual and statistical rather than event-driven. There is no single failure event to trigger an adversarial detector. The model's refusal rate creeps from 2% to 4% over two months. The mean output length grows by 18%. The distribution of tool choices shifts from 60/30/10 to 45/40/15. None of these crosses any per-call threshold; all of them, together, mean the system is no longer behaving the way it was when it was certified.
+
+Prompt-based constraints cannot detect this because they operate per call. C13 semantic traces capture the data but not the distribution comparison. C16 adversarial validation does not fire because nothing is attacking the system. The control gap is between \"no incident\" and \"the model is fine\".
+
+This control reduces risk by establishing a baseline behavioural profile at deployment, continuously comparing production behaviour against the baseline using statistical tests, and routing significant deviations through a governance response path (flag for review, reduce autonomy tier, escalate to human oversight) rather than to a deny outcome.
+
+**What**
+
+A continuous behavioural baseline and drift detection service that observes the C13 semantic event stream and produces drift decisions at a defined cadence.
+
+The control consists of three mechanisms:
+
+1.  A baseline profiler that runs at deployment time and during a controlled re-baselining window. The profiler consumes a defined corpus of C13 semantic events (a fixed time window, a fixed traffic mix, or a synthetic eval set, depending on configuration) and produces a signed behavioural baseline. The baseline records distributions over a fixed set of behavioural dimensions: tool choice distribution (which tools in the agent's allowlist get called and at what rates), output length distribution, output confidence distribution (using the model's logprobs or a calibrated proxy), refusal rate, retry rate, mean reasoning depth proxy (from C13), and per-tool argument distributions for high-frequency tools.
+
+2.  A continuous drift detector that runs in production and consumes the live C13 semantic event stream. The detector computes the same distributions over rolling windows (default: 24-hour rolling, 7-day rolling, 30-day rolling) and compares each window against the baseline using a statistical test appropriate to the dimension: Kolmogorov-Smirnov for continuous distributions (output length, confidence), chi-square for categorical distributions (tool choice, refusal/non-refusal). The detector produces a drift score per dimension per window.
+
+3.  A response router that consumes drift scores and applies the configured response when a score crosses a threshold. Response options, ordered by severity: log only, flag in the conformance dashboard, raise a review ticket, reduce the agent's autonomy tier (Bounded to Sandbox, or High-Privilege to Bounded) by emitting a tier-change event consumed by the policy engine, halt the agent via C06 emergency stop.
+
+Invariants the control guarantees:
+
+- The baseline is signed (C03) and its hash is recorded in every drift decision so the comparison is replayable (C10).
+
+- Drift decisions are immutable evidence (C11 ledger) and correlate to the run IDs that contributed to the rolling window.
+
+- Tier reduction triggered by drift is recorded as a governance action, not as an attack response - the ledger event type differentiates C16 outcomes from C19 outcomes.
+
+**Distinction from C16**
+
+The boundary with C16 is the most important architectural property of this control and is stated here normatively.
+
+C16 is event-driven and adversarial. The C16 harness runs known attack scenarios against the agent and observes pass/fail per scenario. A C16 failure is an attack succeeding (or a previously mitigated attack regressing). The detection mechanism is a test result.
+
+C19 is continuous and statistical. The C19 detector observes production behaviour and compares its distribution against a baseline. A C19 detection is a distribution shift large enough to be statistically improbable absent a change. The detection mechanism is a statistical test on aggregated telemetry.
+
+These are different detection mechanisms operating on different signals at different cadences, and they must not be merged. A system that runs only C16 will pass while drifting because no test fires. A system that runs only C19 will eventually detect drift but will not detect novel attacks that affect only a tail of traffic too small to move the distribution. Both controls are required for high-privilege tier; either alone is insufficient.
+
+The two controls share an evidence destination (C11 ledger, C13 semantic event stream as input) but have independent decision logic, separate bundles, and distinct ledger event types: gate.assurance.adversarial_outcome (C16) and gate.assurance.drift_decision (C19).
+
+![Figure 19.1 - C19 Model Behaviour Monitoring and the C16 boundary. C19 (left subgraph) is continuous and statistical: the baseline profiler produces a signed baseline per ABOM version, the drift detector evaluates rolling windows against it, and the response router emits configured actions. C16 (right subgraph) is event-driven and adversarial: the CI harness runs known attack scenarios. Both write to the same ledger but as distinct event types.](../assets/images/figure-c19-1.png){#fig-c19-1 width="42%"}
+
+**How**
+
+*Control-plane flow*
+
+The C19 baseline profiler runs as a job at deployment time (and on demand when re-baselining is approved). It consumes a defined corpus, computes per-dimension distributions, signs the baseline, and registers it with the drift detector. The drift detector runs as a streaming job over the C13 semantic event stream. On each evaluation interval (default: hourly compute, daily decision emission), it computes rolling-window distributions and runs the statistical tests. When a per-dimension drift score crosses the configured threshold (default: p \< 0.01 sustained over the next evaluation window to avoid noisy single-window triggers), it emits a gate.assurance.drift_decision event. The response router consumes drift_decision events and emits the configured response action; the response action is itself a ledger event so the response chain is auditable.
+
+*Deployment*
+
+The profiler and detector run outside the agent runtime. The profiler is a batch job; the detector is a streaming job. Both write to the ledger and read from C13. The response router is a single component (potentially a function in the orchestrator) that reads drift_decision and emits the response action.
+
+*Baseline management*
+
+Baselines are tied to ABOM versions. When the ABOM changes (model version, prompt bundle, tool schema), the existing baseline is invalidated and a new baseline must be produced under a controlled re-baselining window. Re-baselining is an approved change with a signed approval record, to prevent drift from being silently re-baselined away (\"the new baseline is whatever the model is doing now\"). The re-baselining approval requires a rationale and ties to a change ticket.
+
+*Safe rollout*
+
+Begin with log-only response on all dimensions for thirty days. This establishes false-positive rates per dimension and reveals natural variance that is not actually drift. Then promote dimensions one at a time to flag-and-review. Promote to autonomy-tier-reduction only for dimensions where the baseline is stable and the false-positive rate is below a documented threshold. Halt-via-C06 is reserved for high-privilege tier and only for refusal-rate and per-tool-argument-distribution dimensions (where drift indicates direct behaviour change with safety implications).
+
+*Testing*
+
+Synthetic drift injection in CI. For each dimension, inject a controlled distribution shift into the event stream and confirm the detector fires at the expected window. Negative test: run with no injection and confirm no false positives over a 30-day simulated window. Statistical regression: when the detector is updated, re-run historical data through the new detector and ensure prior-period decisions remain stable.
+
+*Interaction with the ORM autonomy dial*
+
+The ORM (Operational Risk Model) referenced in C05 already consumes observability signals to adjust enforcement posture. C19 produces a signal class that the ORM consumes: drift_severity per dimension. The ORM can integrate drift severity into its autonomy decision without C19 directly mutating the tier. This is the recommended integration path; the direct tier-reduction response described above is a fallback for organisations without a deployed ORM.
+
+*Interaction with C13*
+
+C19 depends on C13 for input data. An organisation cannot deploy C19 without first deploying C13 to the coverage level required for the drift detector to produce stable signals. The conformance check makes this dependency explicit.
+
+**Evidence**
+
+- Signed baseline artifact per ABOM version: baseline_hash, abom_hash, corpus_descriptor (time window or eval set identifier), per-dimension distributions and parameters, signing identity, signature timestamp.
+
+- gate.assurance.drift_decision event per evaluation: event_id, event_time, baseline_hash, abom_hash, evaluation_window (start/end), dimension, statistical_test, test_statistic, p_value, threshold, decision (no_drift, drift_detected), contributing_run_count, trace_id_sample (a sampled subset of contributing run IDs), ledger_event_id.
+
+- gate.assurance.response_action event per response: event_id, drift_decision_id, action (log_only, flag, review_ticket_id, tier_reduction, emergency_stop), action_metadata, trace_id, ledger_event_id.
+
+- Coverage metric: percent of C13 semantic events fed into the drift detector. Target 100% for the agent versions under monitoring.
+
+- False-positive rate per dimension, computed monthly and tracked over time.
+
+- Re-baselining log: every re-baselining event with rationale, approver identity, and the ABOM version transition that triggered it.
+
+**Failure modes**
+
+- Baseline captured from a compromised or pre-drift production window. If the baseline window includes existing drift, future drift is measured against the drifted state and detection is suppressed. Mitigation: baselines are captured under controlled conditions (eval corpus or a documented production window known to be representative), not from arbitrary production samples; baseline source is recorded in the baseline artifact.
+
+- Drift detector tuned to noise. Threshold is set so loose that natural variance triggers daily; alerts are ignored; the control becomes background noise. Mitigation: log-only baseline period of at least thirty days before promotion; per-dimension threshold tuning based on observed natural variance, not a single global threshold.
+
+- Re-baselining used to suppress real drift. Owners re-baseline whenever drift is detected, never investigating the cause. Mitigation: re-baselining requires signed approval, rationale, and an ABOM-version trigger; re-baselining without an ABOM change is allowed only via an exception path with executive approval.
+
+- Response routing without an HITL path. Drift is detected and the system halts the agent autonomously with no human in the loop. For some tiers this is desired; for others it produces over-response. Mitigation: response action is per-tier and per-dimension; halt-via-C06 is reserved for high-privilege and for dimensions where automated halt is documented as the correct response.
+
+- Detection on insufficient volume. The detector runs on an agent that handles low traffic; the rolling window does not have enough samples for the statistical test to be meaningful. Mitigation: minimum sample size per window is enforced; below the minimum, the dimension is marked \"insufficient data\" rather than \"no drift\", and a meta-alert fires if dimensions remain in insufficient-data state for too long.
+
+- Confusion with C16. Operators treat C19 drift detection as adversarial detection and look for an attacker when there is none, missing the real cause (model update, tokeniser change, retrieval distribution shift). Mitigation: documentation and the event type distinction make the C19/C16 boundary explicit; runbooks for drift response do not start with \"look for attack signals\".
+
+- Drift on a dimension that is not in the baseline. The model starts using a new tool or producing a new output category that was not present in the baseline corpus, so no baseline distribution exists. Mitigation: the detector emits a separate new_dimension_observed event for any behaviour outside the baseline support; this is treated as a baseline-completeness alert and routed for review.
+
+Note for future versions. The broader exception-lifecycle contract for the exception register referenced by C09, C17, C18, and C19 (the data.gate.exceptions data source consumed by their Rego policies) is forthcoming in v1.5.
+
+**NIST AI RMF alignment**
+
+C19 maps to MEASURE and MANAGE. MEASURE: the control implements MS-2.5 (the AI system is monitored over time for performance), MS-2.7 (the AI system is monitored for changes that affect risk), and MS-4 (feedback from operations is integrated). MANAGE: the control implements MG-2 (risks are documented and managed throughout the lifecycle) by treating drift as a tracked, governed risk class. Rationale: continuous statistical monitoring of model behaviour and governed response to drift.
+
+**ISO/IEC 42001 alignment**
+
+C19 maps to A.9 (performance monitoring of AI systems), A.8.2 (operations of the AI system), and clause 9.1 (monitoring, measurement, analysis, and evaluation). Typical evidence produced: signed baselines per ABOM version, drift decisions with statistical evidence, response action records, re-baselining logs with approvals.
+
+<!-- C20 is rendered from its on-disk source-of-truth spec. See chapters/_includes/README.md -->
+{{< include _includes/C20.qmd >}}

@@ -11,37 +11,41 @@ book:
   chapters:
     - index.qmd
     - chapters/01-changelog.qmd
-    - chapters/02-introduction.qmd
-    - chapters/03-layered-architecture.qmd
-    - chapters/04-controls-layer-1.qmd
-    - chapters/05-controls-layer-2.qmd
-    - chapters/06-controls-layer-3.qmd
-    - chapters/07-controls-layer-4.qmd
-    - chapters/08-controls-at-a-glance.qmd
-    - chapters/09-conformance.qmd
-    - chapters/10-adoption-path.qmd
-    - chapters/11-implementation-guidance.qmd
+    - chapters/02-executive-summary.qmd
+    - chapters/03-scope-and-non-goals.qmd
+    - chapters/04-design-principles.qmd
+    - chapters/05-threat-model.qmd
+    - chapters/06-reference-architecture.qmd
+    - chapters/07-controls-at-a-glance.qmd
+    - chapters/08-implementation-guidance.qmd
+    - chapters/09-control-plane-contracts.qmd
+    - chapters/10-reference-repository.qmd
+    - chapters/11-control-catalog-layer-1.qmd
+    - chapters/12-control-catalog-layer-2.qmd
+    - chapters/13-control-catalog-layer-3.qmd
+    - chapters/14-control-catalog-layer-4.qmd
+    - chapters/15-operationalization.qmd
+    - chapters/16-conformance.qmd
   appendices:
-    - chapters/A1-standard-mappings.qmd
-    - chapters/A2-glossary.qmd
-    - chapters/A3-references.qmd
+    - chapters/A1-evidence-pack-index.qmd
+    - chapters/A2-standard-mappings.qmd
+    - chapters/A3-artifacts.qmd
+    - chapters/A4-day2-runbooks.qmd
+    - chapters/A5-cloud-quickstart.qmd
+    - chapters/A6-glossary.qmd
+    - chapters/A7-references.qmd
 
-# Document-level metadata reused across formats.
 version: "1.4"
 
 bibliography: references.bib
 csl: harvard.csl
 
-# Cross-references: chapter-scoped numbering. Control sections carry sec-c01 ...
-# sec-c20 anchors in the Layer chapters; figures auto-number.
 crossref:
   chapters: true
 
 format:
   html:
     theme: cosmo
-    # Sakura Sky / deterministicagents.ai brand overrides live in assets/styles.css.
-    # Palette is finalised in Phase 4; the hook exists now so the override path is wired.
     css: assets/styles.css
     toc: true
     toc-depth: 3
@@ -49,7 +53,11 @@ format:
     code-copy: true
     code-overflow: wrap
   pdf:
+    output-file: "GATE-v1.4"
     documentclass: scrreprt
+    classoption:
+      - oneside
+      - open=any
     papersize: letter
     fontsize: 11pt
     geometry:
@@ -61,8 +69,8 @@ format:
     toc-depth: 3
     number-sections: true
     colorlinks: true
+    fig-pos: "H"
     keep-tex: false
 
-# Mermaid uses native Quarto support (no extra extension required).
 mermaid:
   theme: default

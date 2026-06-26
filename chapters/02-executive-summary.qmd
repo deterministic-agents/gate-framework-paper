@@ -1,0 +1,31 @@
+# Executive Summary
+
+Agentic AI is crossing from "assistive" software into systems that plan and execute actions across enterprise tools. When an AI system can take real-world actions, the primary production constraint becomes trust, not model capability.
+
++--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| **A note on the word \"deterministic\"**                                                                                                                                                                                                                                                                           |
+|                                                                                                                                                                                                                                                                                                                    |
+| GATE uses \"deterministic\" to describe the control plane boundaries that surround the agent - not the model itself.                                                                                                                                                                                               |
+|                                                                                                                                                                                                                                                                                                                    |
+| LLMs are inherently probabilistic; GATE does not change that. What GATE enforces is operational determinism at the tool and memory boundary: every action that can cause a side effect passes through enforcement points that authenticate, authorize, constrain, and record it in a verifiable, reproducible way. |
+|                                                                                                                                                                                                                                                                                                                    |
+| The model *proposes*; the control plane *decides*.                                                                                                                                                                                                                                                                 |
+|                                                                                                                                                                                                                                                                                                                    |
+| That separation is what makes the framework trustworthy - not an assertion that the model\'s token generation is predictable.                                                                                                                                                                                      |
++====================================================================================================================================================================================================================================================================================================================+
+
+The core challenge is architectural: models are probabilistic, can be influenced by adversarial inputs, and are inherently non-deterministic. Enterprises cannot safely rely on prompt-only guardrails. Trust must be engineered into the surrounding platform with controls that are deterministic, enforceable, and auditable outside the model.
+
+GATE ( Governed Agent Trust Environment) is a framework and reference architecture that defines 16 Core Controls, organized into four layers:
+
+1.  Identity & Integrity -- prove who/what is acting and that execution is untampered
+
+2.  Runtime & Constraints -- enforce deterministic policy, budgets, and execution boundaries
+
+3.  Observability & Forensics -- produce evidence, replayability, and non-repudiation
+
+4.  Orchestration & Ecosystem -- safely scale to distributed and multi-agent autonomy
+
+GATE also defines a cross-cutting Operational Risk Modeling (ORM) pattern that turns these controls into a closed-loop "autonomy dial": measure → score risk → constrain execution → audit.
+
+This paper is positioned as an open framework: it includes implementable artifacts (schemas, policy templates, matrices, runbooks) that architects can use to model and map implementations in real cloud environments.

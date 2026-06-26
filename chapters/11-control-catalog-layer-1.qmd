@@ -1,0 +1,378 @@
+# The GATE Control Catalog
+
+GATE defines 19 controls across four layers. Each control includes:
+
+- Why it exists (risk/attack it mitigates)
+
+- What it is (the actual mechanism)
+
+- How to implement (patterns)
+
+- Evidence (what to log/measure)
+
+- Failure modes (common mistakes)
+
+Purpose: Define the required *control plane mechanisms* that bound agent autonomy.\
+\
+Control format: Each control includes Why / What / How / Evidence / Failure Modes because implementers need:
+
+- the risk driver (why),
+
+- the mechanism (what),
+
+- the deployment pattern (how),
+
+- the audit/ops outputs (evidence), and
+
+- the common foot-guns (failure modes).
+
+This format is intentionally practical: it reads like a "platform spec" rather than a conceptual paper.
+
+## Layer 1 - Identity and Integrity Controls {#sec-layer-1}
+### Control 01 - Workload Identity and Attestation {#sec-c01}
+
+**Why**\
+Agents are autonomous callers of privileged functions. If agent identity is shared, long-lived, or unprovable, you lose:
+
+- attribution (who did what)
+
+- containment (fast revocation)
+
+- integrity (was this the approved build/config?)\
+  This creates "anonymous autonomy," which is incompatible with enterprise risk models.
+
+**What**\
+A per-agent-instance identity bound to verifiable runtime claims:
+
+- identity: short-lived workload token/certificate
+
+- claims: image digest, config hash, policy bundle hash, toolset hash, environment measurements (optional TEE attest)
+
+- authorization: tool/memory access permitted only if identity is valid and claims match expected ABOM
+
+**How**
+
+- Identity issuance: mint short-lived workload identities via OIDC federation (no static secrets).
+
+- Attestation gate: Tool Gateway and Memory Gateway require a valid identity and matching claims on every privileged request.
+
+- Binding: ABOM contains the expected hashes; the gateway verifies them before allowing side effects.
+
+- Revocation: revoke identity instantly to halt tool access (kill switch depends on this).
+
+**Evidence**
+
+- identity issuance and rotation events (TTL, issuer, subject, claims)
+
+- attestation pass/fail logs at the gateway
+
+- \% of tool/memory requests with verified identity + matching claims
+
+- revocation events with propagation time (seconds to effective stop)
+
+**Failure Modes**
+
+- shared service accounts across agents
+
+- attestation checked once at startup, not at tool/memory boundaries
+
+- identity not bound to versioned artifacts (prompt/policy/toolset drift)
+
+- no revocation path that actually blocks tool calls
+
+**Verification Decay:** Relying on ephemeral certificates for long-term non-repudiation. If an agent identity expires in 1 hour, a signature produced by it is unverifiable 1 year later without a trusted timestamping authority or transparency log.
+
+### Control 02 - Confidential Execution and Secret Boundary Control {#sec-c02}
+
+**Why**\
+Most sensitive exposure occurs in memory during inference and mediation. Encryption at rest/in transit does not protect:
+
+- decrypted prompts
+
+- retrieved context
+
+- tool payloads
+
+- API credentials
+
+For high-sensitivity workloads, "plaintext in RAM" is the threat surface.
+
+**What**\
+A data-in-use protection control that:
+
+- isolates inference/tool mediation in confidential execution environments (where required)
+
+- gates secrets on remote attestation
+
+- enforces "plaintext lifetime limits" and redaction guarantees for telemetry
+
+**How**
+
+- Tiering: Define autonomy tiers and data classifications; require confidential execution for high tiers.
+
+- Attest to release: secrets and high-sensitivity context are released only after remote attestation passes.
+
+- Key discipline: envelope encryption for payloads; per-run derived keys; strict scope and TTL.
+
+- Telemetry hygiene: redact/transform sensitive payloads before logging; store hashes/pointers, not plaintext.
+
+**Evidence**
+
+- attestation artifacts + measurement IDs linked to run IDs
+
+- secret access logs correlated to attestation success
+
+- coverage metrics: % runs in confidential mode for required tiers
+
+- redaction validation results (spot checks / automated scanners)
+
+**Failure Modes**
+
+- "confidential compute enabled" but not enforced for high tiers
+
+- secrets available outside attested boundary
+
+- logging plaintext prompts/tool payloads "for debugging"
+
+- using long-lived credentials inside agent runtime
+
+
+### Control 03 - Artifact Integrity and Supply Chain Controls {#sec-c03}
+
+**Why**\
+Agents are software. Software is compromised through supply chain drift:
+
+- unpinned dependencies
+
+- unsigned images
+
+- prompt/policy bundle drift
+
+If you cannot prove what ran, you cannot trust outcomes or reproduce incidents.
+
+**What**\
+Signed and verified artifacts for:
+
+- container images
+
+- policy bundles
+
+- prompt bundles
+
+- tool schemas/contracts
+
+with a verifiable chain from source → build → deploy → runtime verification.
+
+**How**
+
+- sign builds; store attestations (SBOM + provenance)
+
+- enforce deploy-time verification (admission control / binary authorization patterns)
+
+- gateway checks bundle hashes on each run and emits evidence
+
+- keep ABOM as the authoritative manifest of "what is allowed"
+
+**Evidence**
+
+- signature verification logs and policy bundle hashes
+
+- ABOM versions used per run
+
+- SBOM/provenance reports tied to release tags
+
+**Failure Modes**
+
+- unsigned images or "latest" tags
+
+- policy bundles changed without version increment
+
+- tool schemas evolve without compatibility tests
+
+- inability to correlate a run to a specific build hash
+
+### Control 04 - Agent Lifecycle Governance {#sec-c04}
+
+**Why**\
+\
+Without lifecycle governance, agents sprawl:
+
+- unknown instances running old versions
+
+- stale permissions
+
+- missing owners
+
+This creates an unmanageable attack surface and breaks auditability.
+
+**What**\
+\
+A lifecycle state machine and inventory control:
+
+- Commission → Attest → Run → Quiesce → Decommission\
+  with required ABOM, ownership, and retirement steps.
+
+**How**
+
+- every agent version requires an ABOM and owner
+
+- ephemeral runs by default; long-lived only with explicit justification
+
+- quiesce disables side effects but preserves evidence capture
+
+- decommission revokes identities, disables keys, archives audit/replay artifacts
+
+**Evidence**
+
+- authoritative agent inventory (instances, versions, owners)
+
+- decommission proofs (revocation, archival pointers)
+
+- drift events (unexpected versions/instances)
+
+**Failure Modes**
+
+- no central inventory
+
+- "temporary" agents that become permanent
+
+- decommission doesn't revoke tool access
+
+- orphaned agents with no owner or purpose
+
+### Control 17 - Agent Discovery and Shadow AI Detection {#sec-c17}
+
+**Layer 1 - Identity and Integrity Controls**
+
+Placement rationale: C17 sits in Layer 1 alongside C04 because it is an inventory and identity-boundary control. C04 governs the lifecycle of agents that have entered the control plane; C17 governs the act of getting them into the control plane in the first place. The two controls share an evidence stream: a discovery event in C17 either resolves to a C04 Commission record (the agent is enrolled) or a termination record (the agent is removed). C17 is the feeder, C04 is the receiver. Placing C17 in any other layer would conceal the fact that it is operating on candidates that do not yet have a workload identity.
+
+**Why**
+
+Without this control, an organisation can operate GATE-conformant agents inside a control plane while an unknown number of ungoverned agents run elsewhere in the same environment, calling the same enterprise tools through workload identities that GATE never sees. The failure mode is invisible coverage loss: the C01-C16 evidence stream attests to the agents the platform knows about and tells you nothing about the agents it does not.
+
+This happens through several routes. An engineer integrates an LLM into an existing service and the service's workload identity starts making tool-shaped calls without ever being declared an agent. A vendor SaaS product activates an \"AI agent\" feature that calls back into customer infrastructure. A platform team enables a managed-agent capability inside a cloud account that was not part of the original GATE rollout. In each case the existing GATE controls behave correctly within their scope - they were never asked to govern the agent - while the organisation's risk posture changes silently.
+
+Prompt-based constraints fail here for the same reason they fail elsewhere: the agent is not asking the GATE control plane for permission. Conventional application logging fails because the workload identity making the calls looks like a service, not an agent, and service identities are not subject to ABOM verification or lifecycle review. Network-level egress monitoring catches the call but not the intent: it cannot distinguish a deterministic API client from a model-driven agent making the same call.
+
+This control reduces risk by enforcing continuous discovery and classification of agent-like behaviour across the environment, and a deterministic remediation path (enrol or terminate) at the boundary between the broader AI inventory process and GATE's C04 lifecycle.
+
+**What**
+
+A discovery and classification service that operates outside the GATE control plane and feeds candidates into it.
+
+The control consists of three mechanisms operating at three boundaries:
+
+A network boundary detector that observes outbound traffic from workloads inside the governed environment, looking for call patterns characteristic of agentic behaviour: bursts of structured calls to LLM inference endpoints (OpenAI, Anthropic, Bedrock, Vertex, on-prem inference services), tool-shaped API call patterns from workload identities that are not present in the GATE C04 inventory, and chained inference-to-tool-call sequences within a single workload identity.
+
+A cloud asset inventory integrator that consumes AWS Config, Azure Policy, GCP Asset Inventory, and equivalent cloud-native asset feeds to identify newly provisioned compute, container, or function workloads whose IAM role attaches permissions to invoke inference endpoints or to call tools that are listed in the Tool Gateway tool registry.
+
+A workload identity classifier that compares the set of identities making calls through enterprise tool APIs against the set of identities present in the C04 inventory. Identities that appear in the tool stream but not in the inventory are classified as candidates and emitted as discovery events.
+
+For each candidate, the control produces one of three outcomes: enrol (route the candidate into C04 Commission), terminate (revoke the workload identity and block its network paths), or accept-with-justification (the candidate is verified non-agentic and recorded as an exception with TTL).
+
+Invariants the control guarantees:
+
+- Every workload identity that makes a call to a registered tool endpoint produces either a C04 lifecycle record or a C17 exception record. There is no third state.
+
+- Discovery events are immutable and tamper-evident (C11 ledger).
+
+- The classifier's training or rule set is versioned, signed (C03), and hashed into the discovery event so a discovery decision can be replayed (C10).
+
+![Figure 17.1 - C17 Agent Discovery and Shadow AI Detection. Three detection mechanisms (network, asset inventory, identity classifier) feed a candidate store. The C17 discovery plane is governed by a signed classifier bundle and emits two event types. The candidate is routed to the C04 lifecycle service, which enrols, terminates, or records an exception with TTL.](../assets/images/figure-c17-1.png){#fig-c17-1 width="58%"}
+
+**How**
+
+*Control-plane flow*
+
+The discovery service runs continuously outside the agent runtime. On each interval (network observation window, cloud inventory poll, tool-stream comparison) it emits zero or more agent.discovered events. Each event carries the candidate's workload identity, the boundary that detected it, the classification confidence, the evidence (which call patterns or asset signals triggered the detection), and a candidate hash. The C04 lifecycle service consumes discovery events. If the candidate is already known (workload identity matches a Commissioned agent), the event is dropped after evidence retention. If the candidate is unknown, the lifecycle service opens a Commission ticket against the candidate's owner (resolved via cloud asset tags, billing tags, or a fallback owner) and clocks a remediation TTL. On TTL expiry without enrolment, the control invokes the termination path: identity revocation through the IdP, deny rule injection into the Tool Gateway for the candidate's identity, and network egress blocking via cloud-native network policy.
+
+*Deployment*
+
+Run the network boundary detector as a passive observer on egress flow logs (VPC Flow Logs, NSG Flow Logs, GCP VPC Flow Logs) and on the API mediation layer of the Tool Gateway itself. The asset inventory integrator runs as a scheduled job consuming the cloud-native asset feeds and writing to a normalised candidate store. The classifier runs as a streaming job comparing the candidate store against the C04 inventory. All three feeds publish to a single gate.discovery topic that the lifecycle service subscribes to.
+
+*Safe rollout*
+
+Begin in observe-only mode for thirty days. During this period, the control emits discovery events and opens C04 Commission tickets, but the termination path is disabled. This baseline establishes the false-positive rate and the candidate population's true size, both of which are often much larger than the platform team expects. After observe-only, promote to enforce mode for new candidates only (existing unenrolled identities continue under the observe path while their owners catch up). Promote to full enforce, including for pre-existing candidates, only after the false-positive rate is below a documented threshold and the owner-resolution path is reliable.
+
+*Testing*
+
+For each detection mechanism, maintain a positive and negative test. Positive: stand up a synthetic unenrolled agent (a script that calls an inference endpoint and then calls a registered tool) and confirm the discovery event fires within one observation window. Negative: stand up a non-agent service that calls the same tools through declared paths and confirm no discovery event fires. Run both in CI on every classifier rule change.
+
+Integration with C04.
+
+C17 discovery events are inputs to C04. The C04 Commission state machine adds a new entry state: Discovered (a candidate that has been detected but has not yet been classified or remediated). Discovered transitions to Commissioned on enrolment or to Terminated on TTL expiry. No agent can move directly to Run without traversing Discovered or being Commissioned via a declared path. This change to C04 is documented in C04's state machine; the control text of C04 itself is not modified except to enumerate the Discovered state.
+
+#### Automated enrolment fast-path
+
+The default C17 flow routes every discovered candidate to a human Commission step in C04. For organisations running the control at scale, the routine cases form the bulk of the volume: candidates whose workload class is already on the approved list, whose classification confidence is well above threshold, and whose asset tags resolve cleanly to an owner. Holding every such candidate for human Commission produces a long backlog and a queue-saturation failure mode that the C17 Phase 2 promotion criteria explicitly try to avoid.
+
+The fast-path is a configurable extension to the default flow. A candidate qualifies for the fast-path only if all three criteria hold:
+
+1.  The candidate\'s workload_class is present in the operator\'s approved_workload_classes list.
+
+2.  The candidate\'s classification_confidence is at or above the effective threshold for that workload class (the per-class threshold if defined, else the default threshold).
+
+3.  The candidate\'s asset tags are present and resolve to a known owner in the organisation\'s asset registry.
+
+A candidate failing any one criterion is routed to the standard Commission flow with no change to the existing C04 behaviour. There is no third state.
+
+For a fast-path candidate the C17 service produces a full agent.discovered event followed immediately by a full agent.remediation_outcome event with outcome=enrolled and a populated c04_commission_id. The C04 lifecycle service receives both events and creates the agent in Commissioned state with provenance fields recording that enrolment occurred through the fast-path (the c04_commission_record carries an enrolment_mode field with values manual or automated). The full evidence stream is preserved: an auditor cannot distinguish an automated enrolment from a manual enrolment by absence of evidence, only by the explicit enrolment_mode field.
+
+The fast-path does not eliminate governance. It automates the routine case. Three properties of the fast-path keep it under control:
+
+- The auto_enrolment_policy (the configuration document defining approved_workload_classes, the default confidence threshold, and the per-class thresholds) is itself an artifact governed by dual approval. Changing the policy requires the same approval bar as changing the policy bundle or the invariant bundle. An operator cannot unilaterally lower a threshold or add a workload class.
+
+- The auto_enrolment_policy_hash is hashed into every fast-path agent.discovered event. Replay against the historical policy is possible; a fast-path decision recorded against policy hash X cannot be retroactively justified by policy hash Y.
+
+- The fast-path is per-workload-class and per-confidence-band, configured separately for each. The fast-path is not a single global on/off switch. The configuration shape is preserved as a future expansion surface: a candidate\'s workload class might map to different thresholds in different tenants or different environments.
+
+The auto_enrolment_policy shape is normative in v1.4. See auto_enrolment_policy.schema.json in gate-contracts v1.2.0. The schema defines a default_confidence_threshold, an approved_workload_classes array, a require_asset_tags boolean, and an optional workload_class_thresholds map from workload class string to confidence threshold number. For a candidate with workload class W, the effective threshold is workload_class_thresholds\[W\] if present, else default_confidence_threshold. If a candidate\'s workload class is not in approved_workload_classes, the fast-path is not eligible regardless of threshold. The per-class threshold shape is normative in v1.2.0 contracts because a later move from a single global threshold to per-class thresholds would be a breaking schema change. The contract surface anticipates this evolution from the start.
+
+**Tier guidance.** The fast-path is recommended for bounded tier when the operator has at least thirty days of observe-only data showing a stable false-positive rate and a tagged-asset coverage rate above a documented floor. The fast-path is permitted at high_privilege tier only when the workload class\'s per-class threshold is explicitly raised above the default (a minimum offset is recommended; the specific value is left to operator discretion and documented in the policy change rationale). Untagged candidates remain immediate-termination at high_privilege by default; the fast-path requires require_asset_tags=true and resolution.
+
+**Failure modes specific to the fast-path.**
+
+- Quiet policy expansion. The approved workload class list grows over time as operators add classes to clear the manual backlog. Mitigation: the auto_enrolment_policy change history is reviewed quarterly with the C17 conformance evidence; expansion without rationale is flagged.
+
+- Threshold drift below the no-regret floor. Operators tune the threshold downward to clear the queue, eventually pushing it below the rate at which fast-path enrolments are accurate. Mitigation: the policy carries an absolute floor (recommended: 0.80) below which no per-class threshold may be set; the schema enforces the floor; the conformance check confirms the floor.
+
+- Asset registry gaps. The fast-path requires resolvable asset tags; an asset registry with stale entries produces fast-path enrolments owned by people who have left the organisation. Mitigation: the asset registry resolution returns an owner_last_validated_at timestamp; resolution older than a configured window fails the fast-path and routes the candidate to manual Commission. The owner_last_validated_at field is a read-side property of the operator\'s asset registry, which is external to GATE; GATE consumes the field but does not contract it.
+
+**Evidence**
+
+- agent.discovered event per candidate: timestamp, candidate workload identity, detection boundary (network, asset, identity), classification confidence, evidence payload (call patterns, asset signals, identity mismatch), classifier_bundle_hash, candidate_hash, trace_id.
+
+- agent.remediation_outcome event per candidate: timestamp, candidate_hash, outcome (enrolled, terminated, exception), owner identity, time-to-remediation, exception_id and TTL where applicable.
+
+- Classifier coverage metric: percent of governed-environment workload identities scanned per observation window. Must reach 100% within a documented detection window (recommended: 24 hours rolling).
+
+- Reconciliation metric: count of identities present in the tool API stream but not in the C04 inventory, computed daily, with target zero outside the active remediation TTL window.
+
+- Termination proof: revocation event from the IdP, deny rule version in the Tool Gateway, network policy version, all tied to the agent.remediation_outcome event.
+
+- Classifier integrity report: signed classifier bundle hash matches the hash recorded in discovery events.
+
+**Failure modes**
+
+- Network detector blind spots: deploying the detector only on outbound egress and missing intra-VPC inference services. Agents that call a local LLM service inside the VPC produce no egress signal. Mitigation: instrument the Tool Gateway's own ingress as a detection point so any call to a registered tool that lacks a corresponding C04 identity is itself a discovery signal.
+
+- Owner resolution gaps: cloud assets without billing tags or owner tags produce candidates\
+  that cannot be routed for remediation. They sit in Discovered indefinitely. Mitigation: enforce a tagging policy as a precondition for asset creation in the governed environment, and treat untagged candidates as immediate-termination by default.
+
+- Observe-only drift: the control is deployed in observe-only mode and never promoted because the candidate backlog is too large. Mitigation: a documented promotion criterion tied to backlog size, not time, and an executive escalation path if the backlog cannot be drained within a defined window.
+
+- Exception abuse: accept-with-justification exceptions are issued routinely to avoid the remediation effort. The exception list grows without bound and becomes the dominant state. Mitigation: exceptions carry a TTL that the lifecycle service enforces; exceptions expire and re-trigger discovery; the count of active exceptions is a tracked compliance metric.
+
+- Classifier evasion: an unenrolled agent learns the classifier's signal patterns and behaves below detection thresholds. Mitigation: the classifier rule set is private (not shipped to agent runtimes), and the network detector relies on multiple orthogonal signals (call timing, call shape, identity novelty) rather than any single signal.
+
+- Vendor-managed agents: SaaS products with AI features call back into the customer environment from outside the customer's network. The network detector cannot see them. Mitigation: vendor inbound calls are mediated through a designated Tool Gateway tenant; calls from outside that tenant are denied at the perimeter.
+
+Note for future versions. The broader exception-lifecycle contract for the exception register referenced by C09, C17, C18, and C19 (the data.gate.exceptions data source consumed by their Rego policies) is forthcoming in v1.5.
+
+**NIST AI RMF alignment**
+
+C17 maps to GOVERN and MAP. GOVERN: the control implements GV-1.6 (mechanisms exist to inventory and account for AI systems) and GV-4 (organisational accountability structures). MAP: the control implements MP-1.1 (context of use is established for AI systems) by ensuring that no system in operational use is outside the inventory scope. The control complements C04's GOVERN function by extending it to systems that have not yet self-declared. Rationale: inventory completeness and discovery of ungoverned AI systems.
+
+**ISO/IEC 42001 alignment**
+
+C17 maps to A.6.2.2 (AI system inventory) and A.6.1.1 (AI system identification). It also supports clause 8.1 (operational planning and control) by ensuring that operational controls apply to the full population of AI systems, not only the declared population. Typical evidence produced: discovery and remediation logs, exception register with TTLs, inventory reconciliation reports.

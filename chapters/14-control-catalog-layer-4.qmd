@@ -1,0 +1,134 @@
+# Layer 4 - Orchestration and Ecosystem Controls {#sec-layer-4}
+### Control 14 - Secure Multi-Agent Protocols {#sec-c14}
+
+**Why**\
+Multi-agent systems increase complexity and attack surface. If agents exchange free-form text, you get ambiguity, spoofing, and privilege escalation.
+
+**What**\
+A strict protocol envelope that provides:
+
+- authenticated sender identity
+
+- canonical serialization
+
+- schema validation
+
+- payload signatures
+
+- nonce replay protection
+
+- capability negotiation and versioning
+
+**How**
+
+- define a stable envelope schema
+
+- reject messages without valid signature/nonce/schema
+
+- include capability negotiation to prevent unsafe downgrades
+
+- treat all agent outputs as untrusted until validated
+
+**Evidence**
+
+- schema validation rejects
+
+- signature verification logs
+
+- replay attack attempts detected
+
+**Failure Modes**
+
+- free-text inter-agent communication
+
+- no sender verification
+
+- protocol version drift without compatibility tests
+
+### Control 15 - Distributed Orchestration Control Plane {#sec-c15}
+
+**Why**\
+Agents behave like distributed actors. Without orchestration you get uncontrolled retries, unclear dependencies, and unsafe rollouts.
+
+**What**\
+A workflow/orchestration layer that:
+
+- coordinates task DAGs
+
+- routes across agent versions safely
+
+- applies global backpressure (queue/concurrency) and budgets
+
+- provides retry policies and compensation actions
+
+**How**
+
+- represent workflows as DAGs with explicit dependencies
+
+- safe rollouts: canary/shadow/rollback with measurable gates
+
+- global concurrency pools; tool-specific queues
+
+- compensation actions for partial failures (idempotency and rollback)
+
+**Evidence**
+
+- orchestration execution history and state transitions
+
+- rollback events tied to anomaly thresholds
+
+- backpressure events and queue health
+
+**Failure Modes**
+
+- orchestration logic embedded in agent prompts
+
+- unbounded retries
+
+- lack of idempotency leading to duplicate side effects
+
+- **Agent Deadlock:** Two agents waiting on each other for inputs (A waits for B, B waits for A).
+
+- **Mitigation:** The Orchestrator must implement a \"cycle detection\" or \"step timeout\" watchdog that terminates the DAG if progress stalls.
+
+**Architect's Note - Macro control plane responsibilities**
+
+Control 15 defines orchestration-level governance (queue depth, concurrency, backpressure, scheduling, retries/backoff). It does not replace Gateway-level rate limiting and quotas (Control 07); it governs *workflow execution dynamics* across many calls and many agents.
+
+### Control 16 - Continuous Adversarial Validation and High-Assurance Verification {#sec-c16}
+
+**Why**\
+Attackers adapt. Also, some invariants must be provably true.
+
+**What**\
+Two complementary practices:
+
+1.  Continuous adversarial validation: CI/CD harness for injection, tool misuse, poisoning, and replay regressions
+
+2.  Formal verification (where needed): verifier that checks planned actions against invariants for high-impact tools
+
+**How**
+
+- maintain an abuse case library and regression corpus
+
+- gate deployments on exploit success thresholds
+
+- verifier service sits between plan and execution for high-impact tiers
+
+- counterexamples become replayable incident tests
+
+**Evidence**
+
+- exploit success trend and pass/fail gates
+
+- verifier coverage (% high-impact actions checked)
+
+- counterexample catalog and mitigation tracking
+
+**Failure Modes**
+
+- one-off red team with no regression suite
+
+- tests that don't match production tool surfaces
+
+- verification performed "on paper" rather than in the execution path

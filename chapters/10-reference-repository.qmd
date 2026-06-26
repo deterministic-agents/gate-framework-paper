@@ -1,0 +1,65 @@
+# Reference Repository and Conformance Suite (Normative)
+
++--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| **Release status**                                                                                                                                                                                                                                                                                                 |
+|                                                                                                                                                                                                                                                                                                                    |
+| The schemas and contract definitions in this section are normative for this release (v1.3).\                                                                                                                                                                                                                       |
+| \                                                                                                                                                                                                                                                                                                                  |
+| The automated conformance runner, CLI tooling, and reference repository are in active development and will be published at deterministicagents.ai/gate ahead of v1.4.\                                                                                                                                             |
+| \                                                                                                                                                                                                                                                                                                                  |
+| Until the runner is available, implementers SHOULD use the conformance checks defined in the \"Conformance and Verification\" section of this document as a manual verification baseline. The evidence schemas and correlation rules in the Evidence Pack appendix are stable and suitable for production use now. |
++====================================================================================================================================================================================================================================================================================================================+
+
+GATE is intended to be implementable and interoperable. To prevent "paper compliance" and inconsistent interpretations, GATE defines a normative reference repository that contains the canonical contracts, test harnesses, and example integrations. Implementations MAY vary by cloud provider, runtime, and vendor components, but they MUST conform to the schemas and checks in this repository.
+
+Normative repository contents
+
+- contracts/ - versioned schemas and canonicalization rules
+
+  - tool_envelope.schema.json
+
+  - policy_decision_record.schema.json
+
+  - audit_ledger_event.schema.json
+
+  - replay_trace.schema.json
+
+  - hitl_decision_record.schema.json
+
+  - multi_agent_envelope.schema.json
+
+  - canonical_json.md (canonical serialization requirements used for hashing/signing)
+
+- controls/ - machine-readable mapping of controls to required evidence and checks
+
+  - control_catalog.yaml (C01--C19 metadata: purpose, boundary, required evidence)
+
+- conformance/ - automated conformance runner and checks
+
+  - checks/ (Check01--Check15 implementations)
+
+  - report.schema.json (conformance report format)
+
+  - runner/ (CLI to run against an environment)
+
+- queries/ - reference queries and dashboards
+
+  - BigQuery SQL examples for correlation rules (run → decision → ledger → replay)
+
+  - example alert rules for breakers, budget exhaustion, approval gating
+
+- examples/ - minimal working reference deployment (vendor-neutral patterns)
+
+  - "bounded tier" minimal deployment with a toy tool and memory store
+
+  - sample OPA/Rego policies and tool schemas
+
+  - sample HITL approval integration
+
+## Normative requirement
+
+**GATE conformance (v1.3)**
+
+For this release, an implementation is considered GATE-conformant if it satisfies all must-pass conformance checks defined in the \"Conformance and Verification\" section for its declared autonomy tier, and can produce evidence demonstrating each check passes. Implementers SHOULD document their conformance posture using the check structure in that section as a self-assessment template.
+
+When the automated conformance runner is released (v1.3), the definition will be updated to require a machine-generated conformance report. Implementations validated manually against this release will be considered compliant with prior releases under the versioning policy.

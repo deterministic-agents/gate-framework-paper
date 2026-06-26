@@ -1,0 +1,250 @@
+# GATE Implementation Guidance: Writing Controls as Implementable Specifications
+
+**Normative requirement**: GATE Controls MUST be specified using the structure in this section. This is the GATE Control Specification Standard. It defines the minimum fields required for implementable enforcement, auditable operation, and reproducible incident handling. Controls that do not meet this format are incomplete and are considered non-conformant for contributions and production adoption.
+
+GATE is a control plane framework. Each Control MUST be specified using a uniform structure:
+
+- Why (required): the production risk the control mitigates, expressed as an operational failure mode.
+
+- What (required): the enforceable mechanism and the boundary where it operates.
+
+- How (required): deployment patterns and runtime enforcement steps.
+
+- Evidence (required): what must be emitted/retained to prove enforcement and support forensics.
+
+- Failure Modes (required): common ways teams accidentally weaken or bypass the control.
+
+This structure is not "documentation style." It is an engineering specification format that ensures (a) controls are buildable, (b) controls produce verifiable evidence, and (c) controls remain effective under adversarial inputs.
+
+This standard is used by platform engineers, security reviewers, and auditors to evaluate whether a control is enforceable, testable, and produces sufficient evidence for conformance.
+
+## WHY: Define the risk in operational terms
+
+### Acceptance criteria (WHY)
+
+A control's Why MUST include the following:
+
+- Concrete failure mode: describes what goes wrong in production (not a vague principle).
+
+- Adversary + accident: covers malicious abuse and non-malicious failures (misconfiguration, hallucination, integration bugs).
+
+- Consequence: ties the failure to business/system impact (data leak, unauthorized action, outage, cost blowout).
+
+- Why existing controls fail: explains why prompts, RBAC alone, or traditional logging is insufficient.
+
+- Scope boundary: states whether it mitigates at the tool boundary, memory boundary, network boundary, or orchestration boundary.
+
+### Template (normative)
+
+Why:\
+Without this control, an agent can \<failure mode\> via \<attack path\>, resulting in \<impact\>.\
+Prompt-based constraints and conventional application logging fail because \<reason\>.\
+This control reduces risk by enforcing \<deterministic condition\> at the \<boundary\>.
+
+#### Examples (conformant)
+
+- C05 Tool Gateway: Without deterministic policy enforcement, an agent can invoke side-effecting tools outside its intended scope due to injection or hallucination, causing unauthorized data changes. Prompt constraints fail because they are soft and model-dependent; enforcement must occur at the tool boundary.
+
+- C10 Deterministic Replay: Without replay traces and snapshots, incidents cannot be reproduced reliably, leading to unprovable root cause and unverifiable mitigations. Traditional logs fail because they do not capture tool outputs, retrieved context, and model configuration that drive non-deterministic execution at runtime boundaries.
+
+### Non-compliant examples (avoid)
+
+- "We need this for trust." (not specific)
+
+- "Security best practice." (not actionable)
+
+- "Because compliance." (does not describe failure or mechanism)
+
+## WHAT: Define the mechanism, boundary, and invariants
+
+### Acceptance criteria (WHAT)
+
+A control's What MUST describe an enforceable mechanism:
+
+- Boundary placement: where the control must sit (gateway, orchestrator, CI gate, runtime verifier).
+
+- Inputs: what the control evaluates (identity claims, tool schema, policy bundle hash, risk score, budgets).
+
+- Decision type: allow / deny / obligate / transform / quarantine.
+
+- Invariants: non-negotiable properties it guarantees (e.g., "no tool call without policy decision record").
+
+- Outputs: evidence artifacts emitted (decision record, ledger event, trace pointer) linked to correlation IDs.
+
+### Template (normative)
+
+What:\
+This control is implemented as \<service/mechanism\> at the \<boundary\>.\
+It consumes \<inputs\> and enforces \<invariants\> by producing \<decisions/actions\>.\
+It emits \<outputs\> that are linked to \<correlation IDs\> for audit and replay.
+
+### Required invariants (recommended baseline; tiered requirement)
+
+These invariants make the control plane real. They are RECOMMENDED for all deployments and REQUIRED for bounded and high-privilege tiers:
+
+- No side effect without a policy decision record (C05 + C11).
+
+- No tool/memory access without verified workload identity (C01).
+
+- Every privileged action is attributable and replayable at the tool/memory boundary (C10--C12).
+
+- All critical evidence is immutable and tamper-evident (C11).
+
+- No bypass paths: direct tool calls must be impossible by design (network + IAM + SDK constraints).
+
+## HOW: Provide implementable patterns and step-by-step enforcement
+
+### Acceptance criteria (HOW)
+
+A control's How MUST answer:
+
+- Placement: where it runs (service placement, intercept points, required routes).
+
+- Runtime flow: how requests are processed (envelope, schema validation, policy evaluation, signing, evidence emission).
+
+- Safe rollout: how to introduce it without outages (phased adoption, default-deny, allowlists, canary).
+
+- Testing: how to prove it works and stays working (policy unit tests, conformance tests, exploit scenarios).
+
+### Recommended structure (normative)
+
+Write How in four subsections:
+
+1.  Control-plane flow (mandatory)\
+    Describe the enforcement sequence (for tools and/or memory as applicable):
+
+- Authenticate workload identity
+
+- Validate schema
+
+- Evaluate policy
+
+- Enforce budgets/quotas
+
+- Apply obligations (e.g., HITL, verification, redaction) if required by the policy decision record
+
+- Execute tool/memory operation
+
+- Emit audit ledger event + replay trace + semantic trace
+
+2.  Deployment pattern (cloud-portable)
+
+- Sidecar vs embedded policy engine
+
+- Service mesh vs gateway-only enforcement
+
+- Storage choices for immutable audit and replay traces
+
+3.  Rollout pattern
+
+- Start in observe-only mode (log policy decisions)
+
+- Move to enforce for high-risk tools first
+
+- Default-deny new tools until explicitly allowlisted
+
+4.  Testing pattern
+
+- Policy unit tests (allow/deny/obligate)
+
+- Injection and misuse scenarios in CI
+
+- Replay-based regression tests for incidents
+
+### Template (normative)
+
+How:\
+Flow: \<list the enforcement steps at runtime\>.\
+Deployment: \<where it runs, how it intercepts\>.\
+Rollout: \<safe introduction strategy\>.\
+Testing: \<how to prove it works and remains working\>.
+
+## EVIDENCE: Specify audit artifacts, retention, and correlation
+
+### Acceptance criteria (EVIDENCE)
+
+Evidence is the difference between "we think it's safe" and "we can prove it." Each control's Evidence MUST specify:
+
+- Event types emitted (policy decision, tool invocation, memory read/write, breaker trigger).
+
+- Correlation identifiers (e.g., run_id, trace_id, agent_instance_id, policy_bundle_hash, prompt_bundle_hash).
+
+- Integrity properties (hash linkage, signatures, immutability settings).
+
+- Retention (how long, where stored, and how tamper-resistance is ensured).
+
+- Review mechanisms (dashboards, integrity checks, periodic reports, conformance outputs).
+
+#### Evidence minimum set (GATE baseline)
+
+For any action that can cause side effects, the evidence set SHOULD include:
+
+- Policy Decision Record: input hash + decision + obligations + policy_bundle_hash.
+
+- Tool Invocation Record: request_hash + response_hash + status + timing.
+
+- Ledger Commit: event hash + previous hash + signature + immutable pointer.
+
+- Replay Trace Step: model configuration + context hashes + tool snapshot pointer.
+
+- Semantic Trace Event: intent summary + links to the above artifacts.
+
+#### Template (normative)
+
+Evidence:\
+Emit \<events\> with \<IDs\> and cryptographic linkage (\<hashes/signatures\>).\
+Store in \<immutable sink\> for \<retention period/profile\>.\
+Provide \<integrity verification\> and \<dashboards/queries\> to support incident response and audits.
+
+## FAILURE MODES: Document the foot-guns and bypasses
+
+### Acceptance criteria (FAILURE MODES)
+
+Failure modes MUST be written as specific, observable weaknesses:
+
+- Bypass paths: direct tool calls, direct DB access, debug endpoints.
+
+- Mis-scoping: overly broad permissions, shared identities, wrong boundary.
+
+- Non-enforcement: "logging only" without deny capability; obligations emitted but ignored.
+
+- Unsafe logging: plaintext prompts or sensitive tool payloads in analytics logs.
+
+- Drift: policy/prompt/tool schema changes without ABOM update and re-validation.
+
+### Template (normative)
+
+Failure Modes:\
+Bypass: \<how the control is bypassed\>.\
+Mis-scope: \<permissions too wide / wrong boundary\>.\
+Non-enforcement: \<observe-only left enabled / obligations ignored\>.\
+Evidence gaps: \<missing linkage or retention\>.\
+Operational drift: \<versioning and rollout failures\>.
+
+### Example failure modes (common)
+
+- Tools are accessible from the agent network environment without going through the Tool Gateway.
+
+- Policy engine returns obligations, but the caller ignores them and executes anyway.
+
+- Replay traces omit tool responses, making replay invalid at the tool/memory boundary.
+
+- Signed actions exist, but recipients never verify signatures.
+
+- Memory retrieval has no ACL at query-time (only at ingest).
+
+## Control Authoring Checklist (quick use)
+
+For each Control, confirm:
+
+- Can the platform deny an unsafe action deterministically?
+
+- Is there no bypass path (network + IAM + SDK)?
+
+- Can you attribute actions to a specific agent instance (agent_instance_id)?
+
+- Can you replay an incident run deterministically at the tool/memory boundary?
+
+- Are audit artifacts tamper-evident and immutable (ledger + integrity checks)?
+
+- Are all controls versioned and tied to an ABOM (tool schemas, policy bundles, prompt bundles)?

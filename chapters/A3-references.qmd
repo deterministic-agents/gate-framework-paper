@@ -1,7 +1,0 @@
-# References {.unnumbered}
-
-Bibliography renders here from `references.bib` via the Harvard CSL.
-Bibliography content lands in Phase 4.
-
-::: {#refs}
-:::

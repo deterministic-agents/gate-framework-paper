@@ -1,0 +1,105 @@
+# GATE Controls at a Glance
+
+## Adoption Path (Minimum Viable GATE)
+
+### Adoption Path: Minimum Viable Control Plane and Phased Expansion
+
+Most organizations should not attempt all controls at once. Adopt GATE in phases that establish enforceable boundaries first, then add forensic depth, then scale to distributed autonomy.
+
+**Phase 1 - Establish the execution boundary (Minimum Viable Control Plane)\**
+\
+**Goal:** Ensure no real-world action occurs without deterministic governance, and that the most common adversarial input path is actively defended from day one.\
+\
+**Implement first (minimum set):**
+
+- **C01** Workload Identity & Attestation (at gateway boundaries)
+
+- **C03** Artifact Integrity & Supply Chain (signed images and bundles)
+
+- **C05** Tool Gateway + Policy-as-Code (schema validation + allow/deny + obligations)
+
+- **C06** Circuit Breakers & Emergency Stop (stop side effects fast)
+
+- **C07** Resource Governance (budgets, quotas, throttles)
+
+- **C08** Prompt and Content Injection Defence - Phase 1 baseline only: enforce structural separation of instruction and data channels (e.g., ChatML or equivalent); validate tool inputs against schemas at the gateway (reject free-text tool calls); block known injection patterns at ingestion. Full multi-layer defence (guard models, perplexity checks, indirect injection detection) is a Phase 2 requirement.
+
+- **C11** Verifiable Audit Ledger (tamper-evident, immutable sink)
+
+- **C17** Agent Discovery and Shadow AI Detection - observe-only mode as minimum. Run the network boundary detector and asset inventory integrator; emit discovery events; do not activate the termination path until the false-positive rate is established.
+
+**Exit criteria (measurable):**
+
+- 0 tool calls without a policy decision record
+
+- 0 tool calls that bypass the gateway
+
+- 0 tool calls accepting free-text inputs where a schema exists
+
+- Instruction/data channel separation is enforced and documented
+
+- Break-glass stop disables side effects reliably
+
+- Immutable ledger integrity checks pass
+
+- C17 is deployed in observe-only mode; discovery events are emitting; classifier coverage reaches 100% of governed workload identities within the detection window.
+
+**Phase 2 - Make incidents reproducible and defensible\**
+\
+Add:
+
+- C08 Prompt and Content Injection Defence - full depth: guard model scanning for indirect injection via retrieved content and tool outputs, perplexity-based anomaly detection, adversarial regression tests for injection in CI
+
+- C10 Deterministic Replay (trace, snapshots, replay harness)
+
+- C12 Signed Actions (non-repudiation for high-impact tools)
+
+- C13 Semantic Observability (correlated intent telemetry)
+
+- C17 Agent Discovery - promote to enforce mode. Termination path validated end-to-end; observe-only is no longer acceptable for bounded or high-privilege tiers. The automated enrolment fast-path is permitted at bounded tier when the operator has at least thirty days of observe-only data showing a stable false-positive rate.
+
+- C18 Data Quality Gates - flag-only minimum, with enforce mode for content classes routed to high-impact tools. C18 belongs in Phase 2 because it depends on the Memory Gateway being instrumented for evidence emission (a Phase 2 capability via C10/C13) and because flag-only deployment requires the C13 semantic event stream to surface the flags to operators.
+
+- C20 Agent-to-Human Output Validation - flag-only minimum. C20 belongs in Phase 2 because it depends on C13 (semantic observability) for the per-run context that the classification event correlates against, and on C11 (audit ledger) as the destination for the classification events. Flag-only mode emits the events and evaluates the action matrix without applying obligations to delivery. Phase 2 establishes the false-positive rate per regulated category, the baseline distribution of confidence scores, and the action-matrix coverage before any obligations begin to gate user-facing delivery.
+
+**Exit criteria:**
+
+- C08 guard model coverage reaches defined threshold for high-risk ingestion paths
+
+- Injection regression suite runs in CI with documented pass rate
+
+- Replay reproduces high-impact runs at the tool/memory boundary
+
+- Signed-action coverage reaches required levels by tool category
+
+- Traces correlate policy ↔ tool ↔ ledger ↔ replay
+
+- C17 enforce mode is live for new candidates; termination drill documented; observe-only is no longer acceptable for bounded or high-privilege tiers.
+
+- C18 quality decisions emitted on every memory retrieval; signed quality bundle in place; enforce mode active for at least one production content class.
+
+**Phase 3 - Govern distributed and multi-agent autonomy\**
+\
+**Add:**
+
+- C15 Orchestration Control Plane (routing, backpressure, safe rollouts)
+
+- C14 Secure Multi-Agent Protocols (signed envelopes, nonce protection)
+
+- C16 Continuous Adversarial Validation and high-assurance verification (as needed)
+
+- C19 Model Behaviour Monitoring (depends on C13 at Phase 2 coverage). Baseline profiler runs against the current ABOM. Drift detector operates in log-only minimum for bounded tier.
+
+- C18 promoted to full enforce mode for high-privilege tier (freshness, confidence, and provenance gates all active).
+
+**Exit criteria:**
+
+- multi-agent messages validate signature + schema + nonce
+
+- safe rollout/rollback is measurable and enforced
+
+- adversarial regressions are gated in CI/CD
+
+- C19 baseline is signed and tied to current ABOM; drift detector produces decisions on the configured cadence; response routing applies at least flag-and-review for bounded tier and tier-reduction or halt for high-privilege tier.
+
+- C18 enforce mode active across all content classes for high-privilege tier; provenance verification fully enabled.

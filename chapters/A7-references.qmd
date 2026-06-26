@@ -1,0 +1,9 @@
+# References {.unnumbered}
+
+
+National Institute of Standards and Technology (2023) Artificial Intelligence Risk Management Framework (AI RMF 1.0). Available at: https://www.nist.gov/itl/ai-risk-management-framework (Accessed: 16 June 2026).
+
+ISO/IEC 42001 (2023) Information technology - Artificial intelligence - Management system. International Organization for Standardization.
+
+::: {#refs}
+:::

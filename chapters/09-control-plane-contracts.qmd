@@ -1,0 +1,415 @@
+# GATE Control Plane Contracts 
+
+This section defines the minimum interoperable contracts for an GATE implementation. The goal is portability and open-source composability: different teams can implement components (tool gateway, policy engine, ledger, replay recorder, memory gateway, HITL service) as long as they adhere to these schemas and correlation requirements.
+
+## Contract principles
+
+- Deterministic boundaries: tools and memory are called through enforceable interfaces.
+
+- Evidence-first: every decision emits a verifiable record.
+
+- Correlation everywhere: every record can be linked across systems using shared IDs and hashes.
+
+- Sensitive-by-default: store hashes/pointers for sensitive payloads; keep plaintext out of logs by default.
+
+## Normative naming
+
+**\**
+This document uses the following normative component names:
+
+- Tool Gateway: the enforcement boundary for tool execution (policy, schema, budgets, signing, gating).
+
+- Memory Gateway: the enforcement boundary for memory read/write (ACL, provenance, TTL, poisoning checks).
+
+Other terms (e.g., "tool gateway") may be used descriptively, but the normative contract name is Tool Gateway.
+
+## Global Correlation and Identity Requirements
+
+Required identifiers (every contract event MUST include)
+
+- run_id - unique identifier for an agent run/workflow
+
+- trace_id - distributed trace identifier (OTel compatible)
+
+- span_id - optional but recommended for boundary-level correlation
+
+- agent_instance_id - unique agent instance identity (e.g., SPIFFE URI + instance suffix)
+
+- tenant_id - required for multi-tenant deployments
+
+- environment - dev\|test\|prod
+
+- control_plane_version - version of GATE gateway/policy bundle
+
+Required hashes (for deterministic replay and evidence integrity)
+
+- policy_bundle_hash - hash of the active policy bundle evaluated
+
+- prompt_bundle_hash - hash of the prompt/system config bundle (not necessarily stored in plaintext)
+
+- tool_schema_hash - hash of tool schema contract used for validation
+
+- request_hash - hash of the canonical tool/memory request payload
+
+- response_hash - hash of the canonical tool/memory response payload (or snapshot)
+
+**Canonical serialization rule**
+
+All hashes and signatures MUST be computed over canonical JSON (stable ordering and normalized encoding). If you don't enforce canonicalization, signatures and replay validation will be unreliable across implementations.
+
+## Tool Request/Response Envelope (GATE Tool Gateway)
+
+**ToolRequestEnvelope (JSON)**
+
+  ---------------------------------------------------------------------------
+  {\
+  \"schema_version\": \"v1\",\
+  \"event_type\": \"gate.tool.request\",\
+  \"time\": \"2025-12-24T10:20:00Z\",\
+  \
+  \"run_id\": \"uuid\",\
+  \"trace_id\": \"otel-trace-id\",\
+  \"span_id\": \"otel-span-id\",\
+  \"tenant_id\": \"tenant-123\",\
+  \"environment\": \"prod\",\
+  \
+  \"agent\": {\
+  \"agent_instance_id\": \"spiffe://org/agent/planner#run-123\",\
+  \"agent_name\": \"planner\",\
+  \"agent_version\": \"2.1.0\",\
+  \"identity\": {\
+  \"subject\": \"spiffe://org/agent/planner\",\
+  \"attested\": true,\
+  \"claims\": {\
+  \"image_digest\": \"sha256:\...\",\
+  \"config_hash\": \"sha256:\...\",\
+  \"toolset_hash\": \"sha256:\...\"\
+  }\
+  }\
+  },\
+  \
+  \"tool\": {\
+  \"name\": \"crm.update_contact\",\
+  \"category\": \"reversible_write\",\
+  \"risk_tier\": \"medium\",\
+  \"idempotency_key\": \"optional-stable-key\"\
+  },\
+  \
+  \"inputs\": {\
+  \"content_type\": \"application/json\",\
+  \"payload\": { \"contact_id\": \"123\", \"email\": \"new@example.com\" }\
+  },\
+  \
+  \"bundles\": {\
+  \"policy_bundle_hash\": \"sha256:\...\",\
+  \"prompt_bundle_hash\": \"sha256:\...\",\
+  \"tool_schema_hash\": \"sha256:\...\"\
+  },\
+  \
+  \"hashes\": {\
+  \"request_hash\": \"sha256:\...\"\
+  },\
+  \
+  \"context\": {\
+  \"orm_risk_score\": 0.42,\
+  \"budgets\": {\
+  \"tokens_remaining\": 20000,\
+  \"tool_calls_remaining\": 120,\
+  \"cost_usd_remaining\": 18.50\
+  },\
+  \"source_labels\": \[\"user_input\", \"retrieved_doc\"\],\
+  \"approval\": {\
+  \"required\": false,\
+  \"approval_id\": null\
+  }\
+  }\
+  }
+  ---------------------------------------------------------------------------
+
+  ---------------------------------------------------------------------------
+
+**ToolResponseEnvelope (JSON)**
+
+  ----------------------------------------------------------------------------
+  {\
+  \"schema_version\": \"v1\",\
+  \"event_type\": \"gate.tool.response\",\
+  \"time\": \"2025-12-24T10:20:01Z\",\
+  \
+  \"run_id\": \"uuid\",\
+  \"trace_id\": \"otel-trace-id\",\
+  \"span_id\": \"otel-span-id\",\
+  \"tenant_id\": \"tenant-123\",\
+  \"environment\": \"prod\",\
+  \
+  \"tool\": {\
+  \"name\": \"crm.update_contact\",\
+  \"status\": \"success\",\
+  \"duration_ms\": 312\
+  },\
+  \
+  \"outputs\": {\
+  \"content_type\": \"application/json\",\
+  \"payload_redacted\": { \"updated\": true },\
+  \"snapshot_uri\": \"immutable://snapshots/tool/crm.update_contact/\....\"\
+  },\
+  \
+  \"hashes\": {\
+  \"response_hash\": \"sha256:\...\"\
+  },\
+  \
+  \"policy\": {\
+  \"decision_id\": \"uuid\",\
+  \"decision\": \"allow\",\
+  \"obligations\": \[\"log\", \"sign_action\"\],\
+  \"policy_bundle_hash\": \"sha256:\...\"\
+  },\
+  \
+  \"evidence\": {\
+  \"ledger_event_id\": \"ledger-evt-\...\",\
+  \"replay_trace_step_id\": \"trace-step-\...\"\
+  }\
+  }
+  ----------------------------------------------------------------------------
+
+  ----------------------------------------------------------------------------
+
+### Sensitive Payload Handling (Pointers + Protected Payload Store)
+
+GATE treats tool inputs/outputs and retrieved documents as potentially sensitive. By default, evidence artifacts SHOULD contain hashes and pointers, not plaintext.
+
+Pattern
+
+- Evidence records include payload_hash and an optional payload_ref.
+
+- payload_ref points to a protected payload store with encryption, access controls, and audit logs.
+
+- Logs and analytics stores SHOULD store only redacted fields plus hashes unless policy explicitly allows plaintext.
+
+Minimum contract shape
+
+- payload_hash: sha256:\<canonical\>
+
+- payload_ref: { \"uri\": \"\...\", \"encryption\": \"kms:\<key-id\>\", \"classification\": \"confidential\|regulated\", \"expires_at\": \"\...\" }
+
+Access to payload refs MUST be restricted to approved operators and incident workflows and must be logged.
+
+## Policy Decision Record (OPA/Rego or equivalent)
+
+This is the must-have record that makes tool execution defensible.
+
+**PolicyDecisionRecord (JSON)**
+
+  --------------------------------------------------------------------
+  {\
+  \"schema_version\": \"v1\",\
+  \"event_type\": \"gate.policy.decision\",\
+  \"time\": \"2025-12-24T10:20:00Z\",\
+  \
+  \"decision_id\": \"uuid\",\
+  \"run_id\": \"uuid\",\
+  \"trace_id\": \"otel-trace-id\",\
+  \"tenant_id\": \"tenant-123\",\
+  \"environment\": \"prod\", \"control_plane_version\": \"v1.3\",\
+  \
+  \"subject\": {\
+  \"agent_instance_id\": \"spiffe://org/agent/planner#run-123\",\
+  \"subject_id\": \"spiffe://org/agent/planner\",\
+  \"attested\": true\
+  },\
+  \
+  \"action\": {\
+  \"type\": \"tool.invoke\",\
+  \"tool_name\": \"crm.update_contact\",\
+  \"tool_category\": \"reversible_write\",\
+  \"risk_tier\": \"medium\"\
+  },\
+  \
+  \"inputs\": {\
+  \"request_hash\": \"sha256:\...\",\
+  \"context_hash\": \"sha256:\...\"\
+  },\
+  \
+  \"bundles\": {\
+  \"policy_bundle_hash\": \"sha256:\...\",\
+  \"tool_schema_hash\": \"sha256:\...\"\
+  },\
+  \
+  \"result\": {\
+  \"decision\": \"allow\",\
+  \"reason_codes\": \[\"ALLOWLIST_MATCH\", \"BUDGET_OK\"\],\
+  \"obligations\": \[\
+  { \"type\": \"audit_log\", \"required\": true },\
+  { \"type\": \"sign_action\", \"required\": true },\
+  { \"type\": \"hitl_approval\", \"required\": false }\
+  \]\
+  }\
+  }
+  --------------------------------------------------------------------
+
+  --------------------------------------------------------------------
+
+## Audit Ledger Event Schema (Hash-chained, Tamper-evident)
+
+Ledger events provide integrity. They should be append-only and verifiable.
+
+**LedgerEvent (JSON)**
+
+  --------------------------------------------------------------------
+  {\
+  \"schema_version\": \"v1\",\
+  \"event_type\": \"gate.ledger.event\",\
+  \"time\": \"2025-12-24T10:20:01Z\",\
+  \
+  \"ledger_event_id\": \"uuid\",\
+  \"run_id\": \"uuid\",\
+  \"tenant_id\": \"tenant-123\",\
+  \"environment\": \"prod\",\
+  \
+  \"references\": {\
+  \"trace_id\": \"otel-trace-id\",\
+  \"policy_decision_id\": \"uuid\",\
+  \"tool_request_hash\": \"sha256:\...\",\
+  \"tool_response_hash\": \"sha256:\...\"\
+  },\
+  \
+  \"hash_chain\": {\
+  \"prev_event_hash\": \"sha256:\...\",\
+  \"event_hash\": \"sha256:\...\"\
+  },\
+  \
+  \"signatures\": {\
+  \"signing_key_id\": \"kid-123\",\
+  \"signature\": \"base64\...\"\
+  },\
+  \
+  \"immutability\": {\
+  \"sink_uri\": \"worm://audit/2025/12/24/\...\",\
+  \"retention_class\": \"tier_bounded_365d\"\
+  }\
+  }
+  --------------------------------------------------------------------
+
+  --------------------------------------------------------------------
+
+## Replay Trace Schema (Deterministic Replay)
+
+Replay traces capture non-determinism and snapshot pointers.
+
+**ReplayTrace (YAML)**
+
+  ----------------------------------------------------------------------------------------------------------------------------------------
+  schema_version: v1trace_id: trace-abcrun_id: uuidtenant_id: tenant-123\
+  environment: prod\
+  \
+  agent:\
+  agent_instance_id: \"spiffe://org/agent/planner#run-123\"\
+  agent_name: planner\
+  agent_version: 2.1.0\
+  \
+  model:\
+  model_id: provider/model\
+  model_version: \"2025-11-01\"\
+  temperature: 0.2\
+  seed: 123456\
+  decoding: \"greedy_or_sampled\"\
+  \
+  bundles:\
+  prompt_bundle_hash: \"sha256:\...\" policy_bundle_hash: \"sha256:\...\" tool_schema_hash: \"sha256:\...\"\
+  \
+  steps:\
+  - step_index: 1 step_type: \"retrieve_context\"\
+  retrieved_context_hashes: \[\"sha256:doc1\", \"sha256:doc2\"\]\
+  provenance_refs: \[\"prov://doc1\", \"prov://doc2\"\]\
+  \
+  - step_index: 2 step_type: \"tool_call\"\
+  tool_name: \"crm.update_contact\" request_hash: \"sha256:\...\" response_hash: \"sha256:\...\"\
+  response_snapshot_uri: \"immutable://snapshots/tool/crm.update_contact/\....\" policy_decision_id: \"uuid\" ledger_event_id: \"uuid\"\
+  \
+  - step_index: 3 step_type: \"final_output\"\
+  output_hash: \"sha256:\...\"
+  ----------------------------------------------------------------------------------------------------------------------------------------
+
+  ----------------------------------------------------------------------------------------------------------------------------------------
+
+## Multi-Agent Protocol Envelope (Signed, Versioned, Nonce-protected)
+
+**AgentMessageEnvelope (JSON)**
+
+  ------------------------------------------------------------------------------------------
+  {\
+  \"schema_version\": \"v1\",\
+  \"event_type\": \"gate.agent.message\",\
+  \"time\": \"2025-12-24T10:25:00Z\",\
+  \
+  \"run_id\": \"uuid\",\
+  \"trace_id\": \"otel-trace-id\",\
+  \"tenant_id\": \"tenant-123\",\
+  \
+  \"protocol\": {\
+  \"version\": \"1.0\",\
+  \"capabilities\": \[\"delegate_task\", \"return_result\"\],\
+  \"nonce\": \"random-unique-nonce\",\
+  \"expires_at\": \"2025-12-24T10:26:00Z\"\
+  },\
+  \
+  \"sender\": {\
+  \"agent_instance_id\": \"spiffe://org/agent/planner#run-123\",\
+  \"subject_id\": \"spiffe://org/agent/planner\"\
+  },\
+  \
+  \"recipient\": {\
+  \"subject_id\": \"spiffe://org/agent/executor\"\
+  },\
+  \
+  \"payload\": {\
+  \"type\": \"delegate_task\",\
+  \"task_id\": \"uuid\",\
+  \"inputs\": { \"tool\": \"crm.update_contact\", \"args\": { \"contact_id\": \"123\" } }\
+  },\
+  \
+  \"hashes\": {\
+  \"payload_hash\": \"sha256:\...\"\
+  },\
+  \
+  \"signature\": {\
+  \"key_id\": \"kid-456\",\
+  \"sig\": \"base64\...\"\
+  }\
+  }
+  ------------------------------------------------------------------------------------------
+
+  ------------------------------------------------------------------------------------------
+
+## HITL Decision Record (Approval Gate)
+
+**HITLDecisionRecord (YAML)**
+
+  -----------------------------------------------------------------------------------------
+  schema_version: v1\
+  approval_id: appr-uuid\
+  time: \"2025-12-24T10:22:00Z\"run_id: uuidtrace_id: otel-trace-idtenant_id: tenant-123\
+  environment: prod\
+  \
+  request:\
+  tool_name: transfer_funds request_hash: \"sha256:\...\"\
+  amount_usd: 5000\
+  destination_ref: \"vendor-verified-id\"\
+  \
+  context:\
+  orm_risk_score: 0.72 policy_decision_id: uuid\
+  ledger_head_ref: \"ledger://head/\...\"\
+  \
+  decision:\
+  approver_id: \"role:treasury-approver\"\
+  action: \"approve\" *\# approve \| deny \| modify \| request_more_info*\
+  justification: \"Vendor verified, within policy, invoice matched\"\
+  conditions:\
+  - \"must_use_account:primary\"\
+  - \"max_amount_usd:5000\"\
+  \
+  evidence:\
+  signature: \"base64\...\" ledger_event_id: \"uuid\"
+  -----------------------------------------------------------------------------------------
+
+  -----------------------------------------------------------------------------------------

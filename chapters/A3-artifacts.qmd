@@ -1,0 +1,192 @@
+# Appendix: Artifacts (GATE-ready)
+
+## Artifact A1 - Agent Bill of Materials (ABOM)
+
++-----------------------------------------------------------------------+
+| agent:\                                                               |
+| name: \"invoice-reconciliation-agent\"\                               |
+| owner_team: \"finance-platform\"\                                     |
+| purpose: \"Reconcile supplier invoices against PO and GRN\"\          |
+| autonomy_tier: \"bounded\" *\# sandbox \| bounded \| high-privilege*\ |
+| \                                                                     |
+| dare:\                                                                |
+| required_controls:\                                                   |
+| - C01_workload_identity_and_attestation                               |
+|                                                                       |
+| \- C05_tool_gateway_policy_as_code                                    |
+|                                                                       |
+| \- C06_circuit_breakers_and_emergency_stop                            |
+|                                                                       |
+| \- C07_resource_governance_and_economic_safety                        |
+|                                                                       |
+| \- C10_deterministic_replay                                           |
+|                                                                       |
+| \- C11_verifiable_audit_ledger                                        |
+|                                                                       |
+| \- C13_semantic_observability_and_tracing\                            |
+| \                                                                     |
+| runtime:\                                                             |
+| platform: \"kubernetes\"\                                             |
+| image_digest: \"sha256:\...\" prompt_bundle_hash: \"sha256:\...\"\    |
+| toolset_hash: \"sha256:\...\" policy_bundle_hash: \"sha256:\...\"\    |
+| \                                                                     |
+| identity:\                                                            |
+| workload_id: \"spiffe://org/agent/invoice-recon\"\                    |
+| token_ttl: \"15m\"\                                                   |
+| attestation_required: true\                                           |
+| \                                                                     |
+| model:\                                                               |
+| model_id: \"provider/model\"\                                         |
+| temperature: 0.2\                                                     |
+| seed_mode: \"recorded\"\                                              |
+| system_prompt_version: \"v3.4.1\"\                                    |
+| \                                                                     |
+| memory:\                                                              |
+| partitions:\                                                          |
+| - name: \"finance\"\                                                  |
+| acl: \"role=finance\"\                                                |
+| ttl: \"30d\"\                                                         |
+| provenance_required: true\                                            |
+| \                                                                     |
+| tools:\                                                               |
+| - name: \"read_erp_po\"\                                              |
+| side_effecting: false\                                                |
+| required_controls: \[\"C05\", \"C11\", \"C09\"\]\                     |
+| - name: \"create_dispute_case\"\                                      |
+| side_effecting: true\                                                 |
+| required_controls: \[\"C05\", \"C11\", \"C12\", \"C06\"\]             |
++-----------------------------------------------------------------------+
+|                                                                       |
++=======================================================================+
+
+## Artifact A2 - Tool Authorization Matrix
+
+  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  **Tool**           **Side-effecting**   **Allowed Agents**                                                           **Required Controls**     **Required Conditions**
+  ------------------ -------------------- ---------------------------------------------------------------------------- ------------------------- ---------------------------------------------------------
+  transfer_funds     ✅                   treasury-agent                                                               C01,C05,C06,C07,C11,C12   amount\<=limit; vendor_verified; HITL if ORM\>threshold
+
+  delete_record      ✅                   none (deny by default -​​​​​​​​​​no agent permitted; exception-only via break-glass)   C01,C05,C06,C10,C11,C16   exception-only; formal verify; HITL mandatory
+
+  read_hr_salaries   ❌                   hr-agent                                                                     C01,C05,C11,C09           role=HR; purpose=compensation
+  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## Artifact A3 - Policy-as-Code Tool Gateway (Rego template)
+
+  --------------------------------------------------------------------
+  package gate.toolpolicy\
+  default allow := false\
+  \
+  allow {\
+  input.tool == \"transfer_funds\"\
+  input.amount_usd \<= 1000\
+  input.destination_verified == true\
+  input.orm_risk \<= 0.60\
+  input.identity.attested == true\
+  }\
+  \
+  obligations\[\"require_hitl\"\] {\
+  input.tool == \"transfer_funds\"\
+  input.amount_usd \> 500\
+  }
+  --------------------------------------------------------------------
+
+  --------------------------------------------------------------------
+
+## Artifact A4 - Secure Multi-Agent Protocol Envelope
+
+  ---------------------------------------------------------------------------------------
+  {\
+  \"version\": \"v1\",\
+  \"sender_id\": \"spiffe://org/agent/planner\",\
+  \"timestamp\": \"2025-12-24T10:20:00Z\",\
+  \"nonce\": \"random-unique\",\
+  \"payload\": { \"type\": \"delegate_task\", \"task_id\": \"uuid\", \"inputs\": {} },\
+  \"payload_hash\": \"sha256:\...\",\
+  \"signature\": \"sig:\...\"\
+  }
+  ---------------------------------------------------------------------------------------
+
+  ---------------------------------------------------------------------------------------
+
+## Artifact A5 - Semantic Observability Event Schema (excerpt)
+
+  ----------------------------------------------------------------------------------
+  {\
+  \"event_type\": \"gate.tool_call\",\
+  \"time\": \"2025-12-24T10:20:00Z\",\
+  \"agent_instance_id\": \"spiffe://org/agent/x#run-123\",\
+  \"trace_id\": \"trace-abc\",\
+  \"intent\": \"Update CRM contact email\",\
+  \"tool\": { \"name\": \"crm.update_contact\", \"args_hash\": \"sha256:\...\" },\
+  \"policy\": { \"decision\": \"allow\", \"policy_hash\": \"sha256:\...\" },\
+  \"orm\": { \"risk\": 0.42, \"band\": \"medium\" },\
+  \"audit_ref\": \"ledger_event_id\"\
+  }
+  ----------------------------------------------------------------------------------
+
+  ----------------------------------------------------------------------------------
+
+## Artifact A6 - Deterministic Replay Trace Format
+
+  --------------------------------------------------------------------
+  trace_id: \"trace-abc\"\
+  model:\
+  model_id: \"provider/model\"\
+  temperature: 0.2\
+  seed: 123456\
+  bundles:\
+  prompt_hash: \"sha256:\...\"\
+  policy_hash: \"sha256:\...\"\
+  steps:\
+  - step: 1\
+  input_hash: \"sha256:\...\"\
+  retrieved_context_hashes: \[\"sha256:\...\"\]\
+  - step: 2\
+  tool: \"crm.update_contact\" request_hash: \"sha256:\...\"\
+  response_snapshot_uri: \"immutable://snapshots/..\"\
+  decisions:\
+  - step: 2\
+  policy_decision: \"allow\"\
+  obligations: \[\"log\", \"sign\"\]
+  --------------------------------------------------------------------
+
+  --------------------------------------------------------------------
+
+## Artifact A7 - ORM Risk Model Worksheet
+
+**Purpose and calibration note**
+
+The weights and thresholds below are illustrative starting points, not normative values. They represent a reasonable baseline for a general-purpose bounded-tier deployment. Every organization must calibrate them against their own threat model, tool risk profile, and operational tolerance for false positives (unnecessary HITL gates) versus false negatives (missed interventions).
+
+Before promoting to production, validate your configuration against at least three months of observed agent behavior in observe-only mode. Track the distribution of ORM scores across runs and confirm that the threshold bands produce the intended gate frequency.
+
+**Tuning guidance by deployment context**
+
+**Score interpretation**
+
+- auto_execute - below this score, the agent proceeds without additional gates
+
+- add_verification - above this score, a pre-action verification step is required before execution
+
+- require_hitl - above this score, a human approval gate is triggered before execution
+
+- block - above this score, the action is denied outright regardless of other factors
+
+**Weight interpretation**
+
+Each weight represents the maximum contribution of that signal to the composite risk score when the signal fires at full strength. Weights must sum to 1.0. If you add new signals, rebalance existing weights accordingly and document the change in your invariant bundle review log.
+
+  --------------------------------------------------------------------
+  thresholds:\
+  auto_execute: 0.20 add_verification: 0.45 require_hitl: 0.65\
+  block: 0.85\
+  \
+  weights:\
+  high_impact_tool: 0.20\
+  policy_exception: 0.20 adversarial_flag: 0.25\
+  quota_pressure: 0.10 memory_poisoning_suspect: 0.20\
+  version_divergence: 0.05
+  --------------------------------------------------------------------
+
+  --------------------------------------------------------------------

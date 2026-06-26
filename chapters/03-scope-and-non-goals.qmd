@@ -1,0 +1,33 @@
+# Scope and Non-Goals
+
+Scope
+
+GATE covers the platform controls needed to run agent workloads safely in enterprise environments:
+
+- secure tool execution
+
+- governance of agent memory and state
+
+- forensic-grade auditability
+
+- distributed orchestration
+
+- human oversight patterns
+
+- risk-scored autonomy.
+
+**Enrolment assumption**
+
+GATE governs agents that are enrolled in the control plane. Enrolment is the act of binding an agent instance to a workload identity (C01), an ABOM, an owner and lifecycle state (C04), and routing all of its tool and memory traffic through the Tool Gateway and Memory Gateway. Every other control in this framework presumes that enrolment has occurred. An agent that runs without a GATE identity, whose traffic never reaches the gateways, is invisible to the controls in C01-C16.
+
+This boundary matters because the agent estate in most enterprises is not closed. Engineers stand up agents for experimentation, vendors ship them inside SaaS products, and workload identities get reused for purposes their owners never anticipated. Treating "all agents are governed" as a property of the platform rather than a property of discovery and enrolment will misstate coverage to auditors and to executives.
+
+GATE does not substitute for network-level discovery of shadow or rogue agents. That work sits at the boundary between GATE and the broader AI inventory process and is the subject of C17 (Agent Discovery and Shadow AI Detection). C17 defines the discovery, classification, and enrol-or-terminate path that feeds candidates into the C04 Commission state. Organisations adopting GATE without an equivalent of C17 should record this as a known gap in their conformance self-assessment rather than treat the absence of evidence as evidence of absence.
+
+Non-goals
+
+- model training techniques, fine-tuning strategies, or alignment research
+
+- vendor-specific product prescriptions
+
+- "prompt engineering" as a safety mechanism (prompts are configuration, not governance).

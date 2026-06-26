@@ -1,0 +1,70 @@
+# **Appendix: Day-2 Operational Runbooks (Minimum Set)**
+
+**Runbook 1 - Break-glass stop (containment) and recovery**
+
+Trigger: suspected compromise, runaway execution, unsafe tool actions, or evidence integrity failure.\
+\
+Action:
+
+1.  Activate stop mechanism at the Tool Gateway to deny all write/financial/infrastructure categories.
+
+2.  Freeze orchestration queues and halt retries.
+
+3.  Snapshot evidence pointers: policy decisions, ledger integrity state, replay traces for affected run_ids.
+
+4.  Rotate affected credentials / revoke workload identities.\
+    Evidence required: breaker event, stop activation record, list of affected identities, ledger integrity report, replay trace pointers.
+
+**Runbook 2 - Policy bundle rollback (safe revert)**
+
+Trigger: policy change causes outages or unsafe behavior.\
+\
+Action:
+
+1.  Roll back to last known good policy_bundle_hash.
+
+2.  Verify policy bundle signature and hash pinning.
+
+3.  Re-run conformance checks 01--05 and 13.\
+    Evidence required: change record, bundle hashes, signature verification logs, conformance report.
+
+**Runbook 3 - Incident replay procedure**
+
+Trigger: investigate a run that performed or attempted a high-impact action.\
+\
+Action:
+
+1.  Locate run_id / trace_id.
+
+2.  Retrieve replay trace + required snapshots.
+
+3.  Execute replay harness in "no live dependencies" mode.
+
+4.  Produce replay report with matching request_hash/response_hash pairs.\
+    Evidence required: replay report, snapshot pointers, ledger references, policy bundle hash, tool schema hashes.
+
+**Runbook 4 - HITL outage behavior and reconciliation**
+
+Trigger: HITL system degraded/unavailable while approvals are required.\
+\
+Action:
+
+1.  Enforce fail-closed for actions requiring HITL obligations.
+
+2.  Queue approval requests with TTL; expire safely.
+
+3.  Reconcile queued requests when service returns (no automatic execution without re-evaluation).\
+    Evidence required: queued approval records, expiry logs, re-evaluated policy decision records.
+
+**Runbook 5 - Signing key rotation and verification continuity**
+
+Trigger: routine rotation or suspected key compromise.\
+\
+Action:
+
+1.  Introduce new key with overlapping validity window.
+
+2.  Update verification trust store in gateways and ledger verifiers.
+
+3.  Verify new signatures and ensure ledger chain continuity.\
+    Evidence required: key change record, verification logs, ledger integrity report before/after.

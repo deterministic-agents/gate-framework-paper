@@ -1,3 +1,0 @@
-# Standard Mappings {.unnumbered}
-
-Placeholder. NIST AI RMF, ISO/IEC 42001, AISVS, ATLAS, and SSDF mappings land in Phase 2.
