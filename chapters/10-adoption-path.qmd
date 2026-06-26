@@ -1,0 +1,3 @@
+# Adoption Path
+
+Placeholder. The Phase 1/2/3 adoption path lands in Phase 2, with v1.4 deltas in Phase 3.

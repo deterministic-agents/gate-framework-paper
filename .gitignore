@@ -1,0 +1,24 @@
+# Quarto build artifacts
+/_book/
+/.quarto/
+/_freeze/
+*.tex
+*.aux
+*.log
+*.toc
+*.out
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Node (Quarto extensions)
+node_modules/
+
+**/*.quarto_ipynb
+
+# Quarto per-document generated figure dirs
+*_files/

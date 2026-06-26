@@ -1,0 +1,3 @@
+# Layer 4 - Governance and Lifecycle
+
+Placeholder. Control sections render from `v1.4/controls/Cxx-*.md` sources in Phase 2.

@@ -1,0 +1,18 @@
+# Cover {.unnumbered}
+
+**Governed Agent Trust Environment**
+
+*A Cloud Reference Framework of Controls for Enterprise-Grade Trustworthy AI Agents*
+
+Version: 1.4
+
+Copyright (c) 2026 Andrew Stevens.
+
+License (documentation): Creative Commons Attribution 4.0 International (CC BY 4.0).
+License (code): MIT.
+
+Source: [www.deterministicagents.ai](https://www.deterministicagents.ai)
+
+::: {.content-visible when-format="html"}
+Placeholder cover page. Cover art and full front-matter land in Phase 2.
+:::

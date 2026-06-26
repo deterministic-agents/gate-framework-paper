@@ -1,0 +1,5 @@
+# Introduction
+
+Placeholder introduction. Content lands in Phase 2.
+
+Cross-reference machinery check: see @sec-test in the architecture chapter.

@@ -1,0 +1,68 @@
+project:
+  type: book
+  output-dir: _book
+
+book:
+  title: "Governed Agent Trust Environment"
+  subtitle: "A Cloud Reference Framework of Controls for Enterprise-Grade Trustworthy AI Agents"
+  author: "Andrew Stevens"
+  output-file: "GATE-v1.4"
+  date: "2026"
+  chapters:
+    - index.qmd
+    - chapters/01-changelog.qmd
+    - chapters/02-introduction.qmd
+    - chapters/03-layered-architecture.qmd
+    - chapters/04-controls-layer-1.qmd
+    - chapters/05-controls-layer-2.qmd
+    - chapters/06-controls-layer-3.qmd
+    - chapters/07-controls-layer-4.qmd
+    - chapters/08-controls-at-a-glance.qmd
+    - chapters/09-conformance.qmd
+    - chapters/10-adoption-path.qmd
+    - chapters/11-implementation-guidance.qmd
+  appendices:
+    - chapters/A1-standard-mappings.qmd
+    - chapters/A2-glossary.qmd
+    - chapters/A3-references.qmd
+
+# Document-level metadata reused across formats.
+version: "1.4"
+
+bibliography: references.bib
+csl: harvard.csl
+
+# Cross-references: chapter-scoped numbering. Control sections carry sec-c01 ...
+# sec-c20 anchors in the Layer chapters; figures auto-number.
+crossref:
+  chapters: true
+
+format:
+  html:
+    theme: cosmo
+    # Sakura Sky / deterministicagents.ai brand overrides live in assets/styles.css.
+    # Palette is finalised in Phase 4; the hook exists now so the override path is wired.
+    css: assets/styles.css
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-copy: true
+    code-overflow: wrap
+  pdf:
+    documentclass: scrreprt
+    papersize: letter
+    fontsize: 11pt
+    geometry:
+      - top=1in
+      - bottom=1in
+      - left=1.25in
+      - right=1.25in
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    colorlinks: true
+    keep-tex: false
+
+# Mermaid uses native Quarto support (no extra extension required).
+mermaid:
+  theme: default

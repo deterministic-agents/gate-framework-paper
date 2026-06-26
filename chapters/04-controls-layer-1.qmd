@@ -1,0 +1,4 @@
+# Layer 1 - Identity and Integrity
+
+Placeholder. Control sections C01-Cxx render from `v1.4/controls/Cxx-*.md`
+sources in Phase 2. Do not author control prose directly here.
