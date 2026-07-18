@@ -2,6 +2,33 @@
 
 These checks define what a compliant GATE implementation must demonstrate. Each check includes the expected evidence that reviewers and auditors can validate.
 
+## Check-to-control mapping
+
+The check numbering is preserved across v1.3 and v1.4 for tool and evidence stability. This creates a known off-by-one between check number and control number for the v1.3 additions: Check16 verifies C17, Check17 verifies C18, Check18 verifies C19, Check19 verifies the C16 / C19 event-type boundary, Check20 verifies C20. Readers looking up a check by control number should consult this table.
+
+| Check | Control(s) verified | v1.3 or v1.4 |
+|---|---|---|
+| Check01 | C05 (tool gateway, policy decision record) | pre-v1.3 |
+| Check02 | C05 (bypass paths) | pre-v1.3 |
+| Check03 | C01 (workload identity verification) | pre-v1.3 |
+| Check04 | C05 (schema validation) | pre-v1.3 |
+| Check05 | C11 (ledger integrity) | pre-v1.3 |
+| Check06 | C10 (deterministic replay) | pre-v1.3 |
+| Check07 | C06 (breakers stop side effects) | pre-v1.3 |
+| Check08 | C07 (budgets enforced) | pre-v1.3 |
+| Check09 | C12 (signed actions) | pre-v1.3 |
+| Check10 | C01, C03 (memory authorization at retrieval) | pre-v1.3 |
+| Check11 | C08, C03 (poisoning detection and quarantine) | pre-v1.3 |
+| Check12 | C13 (semantic observability correlation) | pre-v1.3 |
+| Check13 | C05 (policy bundle hash pinning) | pre-v1.3 |
+| Check14 | C09, HITL (signed approvals) | pre-v1.3 |
+| Check15 | C14 (multi-agent envelope) | pre-v1.3 |
+| Check16 | C17 (unenrolled workloads detected and remediated) | v1.3 |
+| Check17 | C18 (memory retrievals pass quality gates) | v1.3 |
+| Check18 | C19 (behavioural baseline and drift detection) | v1.3 |
+| Check19 | C16 / C19 event-type boundary | v1.3 |
+| Check20 | C20 (outputs classified and gated before delivery) | v1.4 |
+
 ## Conformance Check 01 - No Tool Execution Without Policy Decision Record
 
 Requirement: Every tool invocation must have a corresponding PolicyDecisionRecord (allow/deny/obligations).\
@@ -114,13 +141,17 @@ Evidence: agent.discovered and agent.remediation_outcome events for the assessme
 
 ## Conformance Check 17 - Memory Retrievals Pass Quality Gates Before Reaching the Model
 
-Requirement: Every retrieval returned by the Memory Gateway carries a quality_decision_id referencing a gate.memory.quality_decision event. For Bounded tier, every retrieval is evaluated against freshness and confidence thresholds; for High-Privilege tier, the provenance gate is also enforced. Items with missing or unverifiable provenance metadata are rejected at write time. Quality bundle changes are signed and approved under the same change-control bar as the invariant bundle.
+Requirement: Every retrieval returned by the Memory Gateway carries a quality_decision_id referencing a gate.memory.quality_decision event. For Bounded tier, every retrieval is evaluated against freshness and confidence thresholds; for High-Privilege tier, the provenance gate is also enforced. At v1.4, provenance MUST chain back to a registered source (a data source in the C04 source registry or a verified external feed in the approved feed registry); a well-formed provenance record pointing to an unregistered source fails Check17 at high_privilege tier. Items with missing or unverifiable provenance metadata are rejected at write time. Quality bundle changes are signed and approved under the same change-control bar as the invariant bundle.
 
-Evidence: Sample gate.memory.quality_decision events from the assessment window; quality bundle showing per-content-class TTL, minimum confidence, and provenance_required flag; bundle signature verification log; Memory Gateway write rejection log for items lacking required metadata; agent runtime traces showing that quality_flags returned with retrievals are honoured downstream (not stripped or ignored by the prompt template).
+Classification: PARTIAL or AUTOMATED conditional on configuration. When the operator configures the conformance runner with a `quality_bundle_store_uri` pointing at a reachable signed bundle store, the runner verifies the bundle signature and the chain-to-registered-source assertion as an automated step and the check reports as AUTOMATED. When `quality_bundle_store_uri` is unconfigured, the runner verifies what it can from the ledger and emits a `manual_steps` payload for the signature verification; the check reports as PARTIAL.
+
+Evidence: Sample gate.memory.quality_decision events from the assessment window; quality bundle showing per-content-class TTL, minimum confidence, and provenance_required flag; bundle signature verification log; source registry hash and approved feed registry hash referenced by the quality decisions; Memory Gateway write rejection log for items lacking required metadata; agent runtime traces showing that quality_flags returned with retrievals are honoured downstream (not stripped or ignored by the prompt template).
 
 ## Conformance Check 18 - Model Behaviour is Baselined and Monitored for Drift
 
 Requirement: Each agent at Bounded tier or above has a signed behavioural baseline tied to its current ABOM version. The drift detector observes the C13 semantic event stream and emits gate.assurance.drift_decision events at the configured cadence. For Bounded tier, log-only response is the minimum acceptable posture; for High-Privilege tier, the response router applies the configured tier-reduction or halt actions for drift dimensions in the high-impact list. Baselines are invalidated and re-captured on ABOM change; re-baselining without an ABOM change requires an exception with approver identity.
+
+Classification: PARTIAL or AUTOMATED conditional on configuration. When the operator configures the conformance runner with a `baseline_bundle_store_uri` pointing at a reachable signed baseline store, the runner verifies the baseline signature and the ABOM-to-baseline mapping as an automated step and the check reports as AUTOMATED. When `baseline_bundle_store_uri` is unconfigured, the runner verifies what it can from the ledger and emits a `manual_steps` payload; the check reports as PARTIAL.
 
 Evidence: Baseline artifact with signature verification; corpus descriptor recorded in the baseline; sample drift decision events with baseline_hash, abom_hash, statistical test, test statistic, and p-value; response action matrix per tier and dimension; re-baselining log showing approver identity, rationale, and the ABOM version transition that triggered each baseline refresh.
 
@@ -129,6 +160,18 @@ Evidence: Baseline artifact with signature verification; corpus descriptor recor
 Requirement: C16 adversarial detections and C19 drift detections are emitted as separate ledger event types (gate.assurance.adversarial_outcome for C16; gate.assurance.drift_decision and gate.assurance.response_action for C19) and are governed by separate runbooks. A C19 drift response runbook does not begin from an assumption of adversarial cause. Conformance evidence for one cannot be substituted for the other.
 
 Evidence: Event type registry entry with normative note distinguishing C16 and C19; sample of each event type from the assessment window; drift response runbook and adversarial response runbook stored as separate documents; sign-off log showing the runbooks were reviewed and updated when C19 was introduced.
+
+## Conformance Check 20 - Agent Outputs Classified and Gated Before Delivery
+
+Requirement: Every final agent response produces a gate.output.classification event in the ledger before delivery. The output classification bundle is signed and loaded with hash verification. The action matrix covers the cross-product of inputs (sensitivity tier, regulated category, autonomy tier, confidence band) with a default at high_privilege tier of `hold_for_review`. `hitl_review` obligations resolve against signed HITL Decision Records before delivery. At bounded tier the check expects the events to be emitting and the `sensitivity_tier` field populated; at high_privilege tier the check additionally expects the action matrix to be enforced and `hold_for_review` and `hitl_review` obligations to be active for the configured regulated categories. Streaming output to the user MUST be disabled at high_privilege tier for any agent whose action matrix can produce a hold or review obligation.
+
+Classification: PARTIAL. The coverage metric (% of final responses with a classification event), the bundle hash integrity, the obligation distribution, and the bundle-default-hold guardrail are all queryable from the ledger and automatable. The human review workflow verification (that pending `hitl_review` obligations were actually presented to authorised humans within the configured SLA) and the streaming policy verification (that streaming is genuinely disabled for the constrained agents) require process inspection by the operator.
+
+Evidence: Sample gate.output.classification events with sensitivity_tier, regulated_category, confidence_score, obligations, bundle_hash, and ledger_event_id; signed output classification bundle with action matrix; bundle load / verification log; per-tier obligation distribution report; HITL Decision Records tied to `hitl_review` obligations by decision_id; guardrail policy record showing bundle-default-hold enforcement at high_privilege tier; process attestation for streaming disablement.
+
+## Conformance totals
+
+Across the 20 conformance checks, the runner reports 9 AUTOMATED and 11 PARTIAL when run with default configuration. With `quality_bundle_store_uri` and `baseline_bundle_store_uri` configured, two PARTIAL checks (Check17 and Check18) report as AUTOMATED, giving 11 AUTOMATED and 9 PARTIAL. Operators SHOULD configure both bundle store URIs to maximise automated evidence coverage.
 
 ## Suggested conformance reporting
 
@@ -161,6 +204,14 @@ A compliant implementation should produce a periodic conformance report:
 - Drift response actions emitted for high-impact dimensions at High-Privilege tier outside the configured SLA: 0
 
 - C19 gate.assurance.drift_decision events misclassified or merged with C16 gate.assurance.adversarial_outcome events: 0
+
+- Final responses without a gate.output.classification event: 0
+
+- Output classification bundle load / signature verification failures: 0
+
+- `hitl_review` obligations delivered without a signed HITL Decision Record: 0
+
+- Streaming responses emitted at high_privilege tier from agents whose action matrix can produce a hold or review obligation: 0
 
 These can be implemented as automated checks in CI/CD and runtime monitors.
 

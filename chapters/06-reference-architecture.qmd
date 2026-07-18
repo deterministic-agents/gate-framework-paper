@@ -47,8 +47,6 @@ In the following diagram, the tool gateway and memory gateway are the only sanct
 
 ![Figure RA.1 - GATE Trust Pipeline (logical). The agent runtime emits tool requests through the GATE Tool Gateway and memory operations through the GATE Memory Gateway. The C18 quality gate evaluates every retrieval before it reaches the memory stores. Both gateways write evidence through a chain that terminates at the audit ledger (WORM-backed), the replay recorder, and the observability pipeline, which feeds ORM autonomy scoring. The C17 Discovery plane and C19 Assurance plane operate alongside this main path; see Figures 17.1 and 19.1.](../assets/images/figure-ra-1.png){#fig-ra-1 width="60%"}
 
-**\**
-
 All tool and memory access is mediated by GATE enforcement points. The Tool Gateway authenticates requests, evaluates policy, enforces budgets, and optionally applies approval gates before tools execute. The Memory Gateway enforces ACLs, provenance checks, TTL, and poisoning controls for memory reads/writes. Every governed operation produces evidence through the audit ledger, replay recorder, and semantic observability pipeline; ORM consumes these signals to adjust autonomy.
 
 The trust pipeline has two enforced paths out of the agent runtime:
@@ -68,8 +66,6 @@ GATE's logical architecture separates **execution** (what happens) from **assura
 ![GATE logical architecture.](../assets/images/figure-ra-2.png){#fig-ra-2 width="70%"}
 
 **Figure RA.2 - GATE Logical Architecture. The Execution Path (top) carries the agent runtime through the Tool Gateway and Policy Engine, the Orchestrator, and out to enterprise Tools and APIs. The Trust Services row (bottom) bind to each stage: Identity and Attestation, Audit Ledger, Memory Service (now including C18 quality gates), and Observability, HITL, and ORM. v1.3 adds the C17 Discovery Service and the C19 Assurance Plane as new Trust Services that feed and consume the runtime path respectively.**
-
-**\**
 
 The top row shows the execution path from agent runtime to tools/APIs via the Tool Gateway and Orchestrator. The bottom row shows trust services that bind to each stage: identity and attestation for attribution, a verifiable audit ledger and replay store for integrity and reproduction, a governed memory service for persistence safety, and an observability layer that supports HITL gates and ORM-driven autonomy control.
 
@@ -95,9 +91,7 @@ The top row shows the execution path from agent runtime to tools/APIs via the To
 
 - Observability (+ HITL + ORM): captures correlated telemetry and semantic traces, drives operational monitoring, supports approval workflows, and feeds ORM risk scoring to dynamically adjust autonomy and enforcement posture.
 
-**Implementation note\**
-\
-A GATE deployment is "real" only if the following are true:
+**Implementation note.** A GATE deployment is "real" only if the following are true:
 
 1.  all tool and memory access is forced through the gateway (no bypass paths),
 
@@ -106,3 +100,26 @@ A GATE deployment is "real" only if the following are true:
 3.  high-impact actions can be replayed at the tool/memory boundary using stored traces and snapshots.
 
 ## Component Responsibilities Table
+
+| Component | Primary responsibilities | Enforces (controls) | Emits (evidence) |
+|---|---|---|---|
+| Identity Provider / Attestor | Mint short-lived workload identities; seal image / config / policy / toolset claim hashes | C01, C03 | Identity issuance events; attestation records |
+| Discovery Service | Continuous network / asset-inventory / identity classification; emit candidates; enrol-or-terminate | C17 (feeds C04) | `agent.discovered`, `agent.remediation_outcome` |
+| ABOM Registry | Store the signed Agent Bill of Materials per agent class; expose claim hashes to gateways | C03, C04 (consumed by C01 verification) | Signed ABOM artifacts |
+| Lifecycle Service | Commission / Run / Quiesce / Decommission state machine, including the Discovered entry state for C17 candidates | C04 | Lifecycle state transitions |
+| Tool Gateway | Authenticate identity, validate schema, evaluate policy-as-code, enforce obligations (HITL, sign, redact), commit decision to ledger | C05, C06, C07, C09 | Policy decision records, obligation enforcement events |
+| Memory Gateway | Enforce ACLs, TTL, provenance, freshness / confidence / provenance quality gates at retrieval time | C03 (memory), C08 (retrieved-content injection), C18 | Retrieval decisions, `quality_decision` events |
+| Invariant Engine | Evaluate non-overridable invariants after policy; handle break-glass overrides against signed exception records | C09 | Invariant decisions, break-glass records |
+| Audit Ledger | Tamper-evident hash-chained sink for every control event; WORM retention selected per event | C11 | Ledger events with contiguous prev_event_hash chain |
+| Replay Harness | Snapshot the inputs at the tool / memory boundary; replay produces matching output hashes | C10 | Replay traces |
+| Semantic Observability Pipeline | trace_id correlates policy, ledger, replay, and semantic events; feeds C19 baseline profiler | C13 | Semantic trace events; correlation manifests |
+| Assurance Plane | Baseline profiling and continuous drift detection against a signed baseline tied to the ABOM; distinct from C16 | C19 | `drift_decision`, `response_action` events |
+| Output Classifier | Per-response classification at the delivery boundary; sensitivity tier, regulated category, confidence, obligations from the action matrix | C20 | `gate.output.classification` events |
+| Adversarial Harness | Continuous red-team suite; regression on adversarial corpus in CI/CD; distinct from C19 | C16 | Adversarial outcomes |
+| Multi-Agent Broker | Signed envelope + nonce + expiry on agent-to-agent messages | C14 | Multi-agent message records |
+| Orchestration Control Plane | Routing, backpressure, safe rollout / rollback; tenant isolation enforced across agents | C15 | Orchestration events |
+| HITL Service | Presents pending approvals to authorised humans; produces signed HITL Decision Records | C09, C12, C20 (`hitl_review` obligation) | HITL Decision Records |
+| ORM Risk Engine | Runtime risk score consumed by policy evaluation and by C19 tier-reduction decisions | Contributes context to C05, C09, C19 | ORM score events |
+
+C17 Discovery Service and C19 Assurance Plane are named alongside the Tool Gateway and Memory Gateway as first-class components in the v1.3 architecture; C20 Output Classifier is added at v1.4 as a delivery-boundary component that consumes C13 semantic context and commits to the C11 ledger.
+

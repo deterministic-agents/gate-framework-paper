@@ -104,11 +104,11 @@ C20 maps to **A.6.2.6 (AI system intended use)**, **A.7.4 (data quality)** to th
 
 #### OWASP AISVS alignment
 
-C20 maps directly to AISVS C4.1 (Output gating before delivery) and AISVS C4.2 (Output content classification). C4.1 requires that output be gated before delivery to the user; C20 is the GATE-side enforcement surface for this requirement, with the classification engine running on every final response and the obligation router applying redact, hold, or review obligations from a signed action matrix. C4.2 requires that output content be classified into the operator's regulated category taxonomy with a confidence signal attached; C20's `gate.output.classification` event carries the `sensitivity_tier`, `regulated_categories`, and `confidence_score` fields that satisfy this requirement directly. Check20 verifies coverage (every final response produces a classification event), bundle hash integrity, obligation distribution stability, and the fail-closed default at high_privilege tier. See `owasp-aisvs.yaml` for the full per-requirement mapping; full coverage on C4.1 and C4.2.
+C20 maps to AISVS chapter C7 (Model Behavior and Output Control) and one requirement in AISVS chapter C5 (Access Control and Identity). AISVS chapter numbers collide visually with GATE control numbers; the `v1.0-Cx.y.z` requirement form below disambiguates. Full coverage: v1.0-C7.2.1 (confidence estimation on generated answers - the `confidence_score` field on every classification event), v1.0-C7.2.3 (an additional verification pass for responses classified high-risk - the `hold_for_review` and `hitl_review` obligations), v1.0-C7.3.1 (automated classifiers scan every response and block content matching defined harmful categories - the classification engine and obligation router), and v1.0-C5.2.4 (post-inference filtering of data the requester is not authorised to receive - the `redact_fields` obligation). Partial coverage: v1.0-C7.1.1 (output schema validation), v1.0-C7.1.2 (length limits and termination controls), and v1.0-C7.3.2 (detection of system prompt or backend disclosure in responses - completeness depends on the classifier bundle). Check20 verifies coverage (every final response produces a classification event), bundle hash integrity, obligation distribution stability, and the fail-closed default at high_privilege tier. See `owasp-aisvs.yaml` for the full per-requirement mapping.
 
 #### MITRE ATLAS alignment
 
-C20 maps to four ATLAS techniques in the External Harms and Exfiltration categories. **AML.T0048 (External Harms):** C20 gates output content before delivery, complementing C05's tool-call authorisation. The output classification engine catches the case where an action did not require a tool call but the response itself carries regulated content. Coverage: full. **AML.T0049 (Exfiltration via ML Inference API):** C20 gates output content; C07 limits exfiltration volume on the tool-call side. The two controls operate at different exfiltration paths. Coverage: full. **AML.T0024 (Exfiltration via ML Inference API):** identical operationally to T0049 in the current ATLAS taxonomy. **AML.T0067 (LLM Trusted Output Components Manipulation):** C20 gates the trusted output surface; the Check20 fail-closed guardrail at high_privilege tier catches the specific case where the action matrix yields no obligations on a response that should be held. Coverage: full. See `mitre-atlas.yaml` for the per-technique detail and the relationship to the C16 adversarial robustness harness coverage list.
+C20 maps to six ATLAS techniques and sub-techniques. **AML.T0048 (External Harms):** C20 gates output content before delivery, complementing C05's tool-call authorisation. The output classification engine catches the case where an action did not require a tool call but the response itself carries regulated content. Coverage: full. **AML.T0048.003 (External Harms: User Harm):** C20 gates harmful output content before it reaches the user via the output classifier and obligation router. Coverage: full. **AML.T0024 (Exfiltration via AI Inference API):** C20 gates output content; C07 limits exfiltration volume on the tool-call side. The two controls operate at different exfiltration paths. Coverage: full. **AML.T0067 (LLM Trusted Output Components Manipulation):** C20 gates the trusted output surface; the Check20 fail-closed guardrail at high_privilege tier catches the specific case where the action matrix yields no obligations on a response that should be held. Coverage: full. **AML.T0067.000 (LLM Trusted Output Components Manipulation: Citations):** C18 derives citations from retrieval metadata rather than model generation, so provenance cannot be fabricated, and C20 gates the output. Coverage: full. **AML.T0056 (Extract LLM System Prompt):** C20 output filters can block responses that disclose system prompt content, with C08 defending the injection surface; completeness depends on the classifier bundle. Coverage: partial. See `mitre-atlas.yaml` for the per-technique detail and the relationship to the C16 adversarial robustness harness coverage list.
 
 #### NIST SSDF alignment
 
@@ -180,8 +180,8 @@ Classification rationale (PARTIAL): the coverage metric (% of final responses wi
 
 One new event schema. All field types follow the existing JSON Schema draft used by the repository (Draft 2020-12).
 
-`schemas/output/output_classification_event.schema.json`:
-- `schema_version` (string, semver)
+`schemas/output_classification_event.schema.json`:
+- `schema_version` (string, const `"v1"`)
 - `event_type` (const: `gate.output.classification`)
 - `time` (string, date-time)
 - `run_id` (string, uuid)
@@ -198,11 +198,11 @@ One new event schema. All field types follow the existing JSON Schema draft used
 - `bundle_hash` (string, sha256)
 - `ledger_event_id` (string, uuid)
 
-Ledger event type registry (`event_types.yaml`):
-- Add `gate.output.classification` with retention class `output-evidence` (new retention class, defined as the same retention duration as `assurance-evidence`).
-- **[ERRATA - reversed by `paper-updates/01-C20-errata.md` Erratum 2 (2026-06-23).]** The instruction above is stale. No `event_types.yaml` artifact exists in gate-contracts; the event-type registry mechanism is the `event_type` const field on each event schema (declared on `output_classification_event.schema.json` for this control). Category-style retention classes (`output-evidence`, `assurance-evidence`) are not used in the repo; the `audit_ledger_event.immutability.retention_class` enum is duration-based with four values (`sandbox_hot_30d | prod_hot_365d | prod_cold_6y_worm | regulated_cold_7y_plus`). C20 events use a per-event retention class selected from this enum by the action-matrix entry that classified the response. No new file is added in v1.4.
+Event-type registration. `gate.output.classification` is registered via the `event_type` const field on `output_classification_event.schema.json`. No separate `event_types.yaml` artifact exists in gate-contracts and no new file is added in v1.4.
 
-Extension to `schemas/abom/abom.schema.json`:
+Retention class. The retention class for a C20 event is selected per response from the existing `audit_ledger_event.immutability.retention_class` enum (`sandbox_hot_30d | prod_hot_365d | prod_cold_6y_worm | regulated_cold_7y_plus`) based on the action-matrix entry that classified the response. The output classification bundle's action-matrix entries carry an optional `retention_class` field naming one of the four enum values; the C20 event-emitting code uses the matched entry's `retention_class` value when setting `audit_ledger_event.immutability.retention_class` on the wrapping ledger event. Default mapping when the matched entry omits `retention_class`: `sandbox_hot_30d` for sandbox tier, `prod_cold_6y_worm` for bounded and high-privilege tiers. Operators override to `regulated_cold_7y_plus` for regulated categories whose jurisdiction or sectoral rule requires 7+ years. No new retention class enum value is added in v1.4.
+
+Extension to `schemas/abom.schema.json`:
 - Add optional `output_classification_bundle_hash` (sha256) field linking an ABOM version to its active output classification bundle.
 
 Compatibility note: All v1.2.0 schema changes are backward-compatible with v1.1.1. The new event type is additive; the `abom.schema.json` extension is optional with a documented default of null.
@@ -250,6 +250,4 @@ These are explicit boundaries on what C20 covers in v1.4. Each is a candidate fo
 - **Dual-approver HITL on output review.** v1.4 HITL Decision Record is single-approver. Where regulated category review requires dual approval, the break-glass record path (Workstream 2 contract) is the manual workaround. Dual-approver HITL is a v1.5 deliverable.
 - **Unified exception register.** The output classification bundle does not currently reference the unified exception register (the `data.gate.exceptions` surface referenced by C09, C17, C18, C19). The unified exception lifecycle contract is a v1.5 deliverable; until then, exceptions to the action matrix are recorded in the bundle change history and tracked outside the ledger.
 
-#### References
-
-European Union (2024) *Regulation (EU) 2024/1689 of the European Parliament and of the Council of 13 June 2024 laying down harmonised rules on artificial intelligence (Artificial Intelligence Act)*. Official Journal of the European Union, L 2024/1689.
+External references for C20 (EU AI Act, OWASP AISVS, MITRE ATLAS) are consolidated in the paper's main References chapter.

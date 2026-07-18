@@ -1,65 +1,49 @@
 # Reference Repository and Conformance Suite (Normative)
 
-+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| **Release status**                                                                                                                                                                                                                                                                                                 |
-|                                                                                                                                                                                                                                                                                                                    |
-| The schemas and contract definitions in this section are normative for this release (v1.3).\                                                                                                                                                                                                                       |
-| \                                                                                                                                                                                                                                                                                                                  |
-| The automated conformance runner, CLI tooling, and reference repository are in active development and will be published at deterministicagents.ai/gate ahead of v1.4.\                                                                                                                                             |
-| \                                                                                                                                                                                                                                                                                                                  |
-| Until the runner is available, implementers SHOULD use the conformance checks defined in the \"Conformance and Verification\" section of this document as a manual verification baseline. The evidence schemas and correlation rules in the Evidence Pack appendix are stable and suitable for production use now. |
-+====================================================================================================================================================================================================================================================================================================================+
+::: {.callout-note title="Release status"}
+The schemas, contract definitions, and reference repositories in this section are normative for this release (v1.4).
 
-GATE is intended to be implementable and interoperable. To prevent "paper compliance" and inconsistent interpretations, GATE defines a normative reference repository that contains the canonical contracts, test harnesses, and example integrations. Implementations MAY vary by cloud provider, runtime, and vendor components, but they MUST conform to the schemas and checks in this repository.
+The automated conformance runner shipped in gate-conformance v1.2.0 (alongside the v1.3 framework release) and is at v1.3.0 for the v1.4 release. It automates 9 of the 20 conformance checks against your evidence store when run with default configuration. Check17 and Check18 report as AUTOMATED (rather than PARTIAL) when the runner is configured with `quality_bundle_store_uri` and `baseline_bundle_store_uri` pointing at reachable signed bundle stores; without those URIs configured they remain PARTIAL. Check20 joins the suite at v1.4 as PARTIAL: the coverage metric, bundle hash integrity, obligation distribution, and the bundle-default-hold guardrail are queryable; the human review workflow verification and the streaming policy verification require operator inspection.
 
-Normative repository contents
+Default configuration: 9 AUTOMATED, 11 PARTIAL across 20 checks.
+Configured with both bundle-store URIs: 11 AUTOMATED, 9 PARTIAL.
 
-- contracts/ - versioned schemas and canonicalization rules
+Implementations SHOULD run the automated runner against their evidence store to produce the machine-readable half of the conformance report, and supply the operator-attested half for the PARTIAL checks.
+:::
 
-  - tool_envelope.schema.json
+GATE is intended to be implementable and interoperable. To prevent "paper compliance" and inconsistent interpretations, GATE defines a normative reference repository set containing the canonical contracts, test harnesses, and example integrations. Implementations MAY vary by cloud provider, runtime, and vendor components, but they MUST conform to the schemas and checks in these repositories.
 
-  - policy_decision_record.schema.json
+## Repository inventory
 
-  - audit_ledger_event.schema.json
+The GATE reference is split across purpose-built repositories under the `deterministic-agents` organisation on GitHub:
 
-  - replay_trace.schema.json
+- **gate-contracts** (v1.2.0). JSON Schema (Draft 2020-12) contracts for every control-plane event. Canonical dependency for every other repo. The `event_type` const field on each event schema is the event-type registry. Twenty contract event schemas plus the resource schemas (ABOM, agent state, memory item, memory request / response, break-glass record, output classification event, output classification bundle references).
+- **gate-policies** (v1.2.0). OPA / Rego policy and invariant bundles, with `policies/bundle_manifest.yaml` declaring per-file assignment to policy or invariant bundles. Rego for C05 (tool gateway baseline), C09 (invariants and break-glass), C17 (discovery classification and auto-enrolment), C18 (quality gate with chain-to-registered-source), C19 (drift response routing), C20 (output classification).
+- **gate-python** (v1.2.0). Reference Python implementation: canonical JSON, envelopes, ledger, replay, ES256 signing, schema validation, plus module packages for C17 discovery, C18 quality, C19 assurance behaviour, C20 output, and C09 break-glass. Cross-language compatibility source of truth: `gate/test_vectors/canonical_json_vectors.json`.
+- **gate-rust** (v1.0.0). Rust companion crate. Canonical JSON, SHA-256, envelope builders, hash-chained ledger events, ES256 sign / verify. Hash-compatibility with gate-python is a contract, not an accident: the canonical JSON test vector file in gate-python is the shared source of truth, and the gate-rust CI verifies every vector round-trips to the same SHA-256 as gate-python. This is the high-throughput Tool Gateway companion for latency-sensitive deployments.
+- **gate-fuzz** (v1.0.0). Hypothesis-based cross-language differential test suite between gate-python v1.2.0 and gate-rust v1.0.0. Seven declared properties (five active, two deferred to v1.5: envelope-hash byte parity and ledger-event-hash byte parity, pending the PyO3 or subprocess conformance bridge) exercised via a line-delimited-JSON subprocess protocol. The suite enforces the byte-equivalence contract at canonical-JSON, signing, and schema-validation layers between the two implementations, bounded to the W5 14-vector safe set. Three roadmap items - bundle-derived Hypothesis strategies, HTTP-level protocol fuzzing against a live Tool Gateway, and a PARTIAL-check mapping table - are deferred to v1.5. Cross-referenced from C16 (adversarial validation as CI-side property tests) and chapter 16 (conformance): operators MAY submit gate-fuzz output artifacts as supplementary evidence for PARTIAL checks where the underlying property is amenable to differential testing.
+- **gate-conformance** (v1.3.0). Twenty conformance checks (Check01 through Check20), self-assessment YAML template, evidence correlation SQL queries, and nine operational runbooks. Runner: `python -m runner.cli run --config gate-conformance.yaml`. The `mappings/` directory contains `owasp-aisvs.yaml`, `owasp-aisvs-triage.yaml`, `mitre-atlas.yaml`, and `nist-ssdf.yaml`.
+- **gate-knowledge** (v1.0.0, informative not normative). GATE conceptual layer published as an Open Knowledge Format v0.1 bundle (Google Cloud, 2026). One markdown file per control, threat model component, architecture layer, and adoption phase, with typed relationship links (`feeds`, `evaluates_after`, `distinct_from`). Read this to explore GATE as a knowledge graph; consult the normative contracts and policy repositories for anything you plan to implement.
+- **gate** (top-level framework, v1.4). Framework paper, HTML specification source, release notes, artifacts bundle. The bundle at v1.4 is `GATE-artifacts-v1.4.zip`.
 
-  - hitl_decision_record.schema.json
+## Normative repository contents (per repo)
 
-  - multi_agent_envelope.schema.json
+Each repository declares its normative surface in its own README. The paper carries the canonical event-type list and the check-to-control mapping:
 
-  - canonical_json.md (canonical serialization requirements used for hashing/signing)
-
-- controls/ - machine-readable mapping of controls to required evidence and checks
-
-  - control_catalog.yaml (C01--C19 metadata: purpose, boundary, required evidence)
-
-- conformance/ - automated conformance runner and checks
-
-  - checks/ (Check01--Check15 implementations)
-
-  - report.schema.json (conformance report format)
-
-  - runner/ (CLI to run against an environment)
-
-- queries/ - reference queries and dashboards
-
-  - BigQuery SQL examples for correlation rules (run → decision → ledger → replay)
-
-  - example alert rules for breakers, budget exhaustion, approval gating
-
-- examples/ - minimal working reference deployment (vendor-neutral patterns)
-
-  - "bounded tier" minimal deployment with a toy tool and memory store
-
-  - sample OPA/Rego policies and tool schemas
-
-  - sample HITL approval integration
+- **contracts/**. Versioned JSON schemas and canonicalisation rules. Every contract event schema declares its type via the `event_type` const field.
+- **controls/**. Machine-readable metadata catalogue at `control_catalog.yaml` covering C01 through C20 (purpose, boundary, required evidence, applicable tiers).
+- **conformance/**. The runner and its checks. `checks/` holds the Check01 through Check20 implementations. The conformance report format is defined by `conformance_report_template.yaml` (a YAML template with all 20 check entries, not a JSON schema; no `report.schema.json` exists in the tree). `mappings/` holds the AISVS, ATLAS, and SSDF mapping files.
+- **queries/**. Reference SQL for evidence correlation (`run` to `decision` to `ledger` to `replay`), example alert rules, and dashboard templates.
+- **examples/**. Minimum working reference deployment with a toy tool and memory store, sample OPA / Rego policies and tool schemas, sample HITL approval integration.
 
 ## Normative requirement
 
-**GATE conformance (v1.3)**
+For this release, an implementation is considered GATE-conformant if it satisfies all must-pass conformance checks defined in the "Conformance and Verification" chapter for its declared autonomy tier, and can produce evidence (machine-generated where the check is AUTOMATED, operator-attested where the check is PARTIAL or MANUAL) demonstrating each check passes.
 
-For this release, an implementation is considered GATE-conformant if it satisfies all must-pass conformance checks defined in the \"Conformance and Verification\" section for its declared autonomy tier, and can produce evidence demonstrating each check passes. Implementers SHOULD document their conformance posture using the check structure in that section as a self-assessment template.
+Implementations SHOULD run the automated conformance runner against their evidence store to produce the machine-readable portion of the conformance report, then supply the operator-attested portion for the PARTIAL checks using the self-assessment template in the "Conformance and Verification" chapter.
 
-When the automated conformance runner is released (v1.3), the definition will be updated to require a machine-generated conformance report. Implementations validated manually against this release will be considered compliant with prior releases under the versioning policy.
+The gate-fuzz differential suite is a source of supplementary evidence for PARTIAL checks where cross-language byte equivalence is a queryable property: operators MAY submit gate-fuzz output artifacts as evidence alongside the runner's output. The conformance runner does not unilaterally consume gate-fuzz output; operator submission is required.
+
+## Cross-language guarantee
+
+gate-python and gate-rust are contract-equivalent at the canonical-JSON layer for values within the W5 14-vector safe set. The vector file `gate-python/gate/test_vectors/canonical_json_vectors.json` is the source of truth; both implementations round-trip these vectors to identical SHA-256 hashes on every release build. Values outside the safe set (specifically float emission edge cases) may diverge; the divergence is bounded, documented, and mitigated by the gate-fuzz property strategy staying within the safe set. Convergence at the envelope, ledger, and signing layers is structural in v1.4 (same canonical-JSON foundation, ported control-flow, shared ES256 ASN.1-DER format) and graduates to empirical byte equivalence in v1.5 via the PyO3 or subprocess conformance bridge.

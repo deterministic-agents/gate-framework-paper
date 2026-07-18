@@ -132,3 +132,9 @@ Two complementary practices:
 - tests that don't match production tool surfaces
 
 - verification performed "on paper" rather than in the execution path
+
+**MITRE ATLAS alignment (v1.4)**
+
+The C16 CI harness maps each test scenario to a MITRE ATLAS tactic and technique. The mapping is pinned to ATLAS content release `2026.05` and lives at `gate-conformance/mappings/mitre-atlas.yaml`. In-scope technique families include: LLM prompt injection (T0051 family), AI agent tool invocation abuse (T0053), exfiltration via tool calls (T0086), RAG poisoning (T0070, T0071), AI agent context poisoning (T0080 family), and agentic resource consumption (T0034.002). The gate-fuzz differential suite (v1.0.0) contributes property-based coverage where a runtime-adversary technique reduces to a queryable invariant.
+
+Out of scope for the C16 harness and NOT covered by a passing C16 run: T0020 Poison Training Data, T0019 / T0058 Publish Poisoned Datasets and Models, T0018 family Manipulate AI Model, T0024 family inference-API privacy and model extraction, T0043 family Craft Adversarial Data, T0010 AI Supply Chain Compromise beyond signature verification. These are model-interior or training-time attacks; GATE governs agents at runtime and consumes signed model artifacts. Operators requiring evidence against these families rely on the model provider's own harness and on C03 supply chain controls; a passing C16 run is not a substitute.

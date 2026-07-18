@@ -14,7 +14,6 @@ This section defines the minimum interoperable contracts for an GATE implementat
 
 ## Normative naming
 
-**\**
 This document uses the following normative component names:
 
 - Tool Gateway: the enforcement boundary for tool execution (policy, schema, budgets, signing, gating).

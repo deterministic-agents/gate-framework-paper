@@ -1,15 +1,44 @@
 # GATE Controls at a Glance
 
+## Control summary table
+
+GATE v1.4 defines 20 controls across four layers. The catalog below lists each control with its boundary, primary enforcement, and the evidence artifact it produces. Full specifications (Why / What / How / Evidence / Failure Modes) are in the control catalog chapters (Layer 1 to Layer 4).
+
+| Control | Layer | Boundary | Enforces | Produces Evidence |
+|---|---|---|---|---|
+| C01 Workload Identity and Attestation | 1 | Tool / Memory | Per-instance identity and claim verification on every privileged request | Identity issuance / attestation logs |
+| C02 Confidential Execution and Secret Boundary | 1 | Execution / Secrets | TEE isolation for high-sensitivity workloads; attestation-gated secrets | Attestation records; secret access logs |
+| C03 Artifact Integrity and Supply Chain | 1 | Supply chain | Signed images, bundles, prompts, policies verified against ABOM | Signature verification logs; ABOM records |
+| C04 Agent Lifecycle Governance | 1 | Lifecycle | ABOM-driven Commission / Run / Quiesce / Decommission state machine | Lifecycle state transitions |
+| C17 Agent Discovery and Shadow AI Detection | 1 | Network, asset inventory, identity | Discovery of ungoverned workloads; enrol-or-terminate path into C04 | `agent.discovered`, `agent.remediation_outcome` |
+| C05 Tool Gateway (Policy-as-Code) | 2 | Tool | Every tool call authenticated, schema-validated, policy-evaluated, obligation-enforced | Policy decision records per call |
+| C06 Circuit Breakers and Emergency Stop | 2 | Tool | Break-glass stop, automatic breakers on rate / cost / anomaly | Breaker trigger events; snapshot pointers |
+| C07 Resource Governance and Economic Safety | 2 | Tool | Per-agent budgets and rate limits; deny on exhaustion | Budget events |
+| C08 Prompt and Content Injection Defence | 2 | Tool / Memory | Instruction / data channel separation; schema validation; guard model at Phase 2+ | Schema rejects; guard model events |
+| C09 Execution Constraints and Invariant Enforcement | 2 | Tool | Non-overridable invariants evaluated alongside policy; HITL, break-glass, signed exceptions | Invariant decisions; break-glass records |
+| C18 Data Quality Gates | 2 | Memory Gateway | Retrieval-time freshness / confidence / provenance; chain-to-registered-source | `quality_decision` events |
+| C10 Deterministic Replay | 3 | Evidence | Trace and snapshot at tool / memory boundary; replay produces matching hashes | Replay traces |
+| C11 Verifiable Audit Ledger | 3 | Evidence | Hash-chained tamper-evident sink for all control events; WORM retention | Ledger events |
+| C12 Signed Actions and Non-Repudiation | 3 | Evidence | ES256 signatures on high-impact actions bound to C01 identity | Signed action records |
+| C13 Agent-Native Observability and Semantic Tracing | 3 | Evidence | trace_id correlates policy, ledger, replay, semantic events | Semantic trace events |
+| C19 Model Behaviour Monitoring | 3 | Assurance plane (consumes C13) | Continuous drift detection vs signed baseline; distinct from C16 | `drift_decision`, `response_action` |
+| C20 Agent-to-Human Output Validation | 3 | Output / delivery | Per-response classification with sensitivity tier, regulated category, action matrix, obligations | `gate.output.classification` events |
+| C14 Secure Multi-Agent Protocols | 4 | Orchestration | Signed envelopes, nonce protection, expiry on agent-to-agent messages | Multi-agent message records |
+| C15 Distributed Orchestration Control Plane | 4 | Orchestration | Routing, backpressure, safe rollout / rollback, tenant isolation | Orchestration events |
+| C16 Continuous Adversarial Validation | 4 | Orchestration | Red-team suite, adversarial regressions gated in CI/CD; distinct from C19 | Adversarial outcomes |
+
+Layer composition: Layer 1 (Identity and Integrity) five controls; Layer 2 (Runtime Enforcement) six controls; Layer 3 (Observability and Forensics) six controls; Layer 4 (Orchestration and Ecosystem) three controls.
+
 ## Adoption Path (Minimum Viable GATE)
 
 ### Adoption Path: Minimum Viable Control Plane and Phased Expansion
 
 Most organizations should not attempt all controls at once. Adopt GATE in phases that establish enforceable boundaries first, then add forensic depth, then scale to distributed autonomy.
 
-**Phase 1 - Establish the execution boundary (Minimum Viable Control Plane)\**
-\
-**Goal:** Ensure no real-world action occurs without deterministic governance, and that the most common adversarial input path is actively defended from day one.\
-\
+### Phase 1 - Establish the execution boundary (Minimum Viable Control Plane)
+
+**Goal:** Ensure no real-world action occurs without deterministic governance, and that the most common adversarial input path is actively defended from day one.
+
 **Implement first (minimum set):**
 
 - **C01** Workload Identity & Attestation (at gateway boundaries)
@@ -44,8 +73,8 @@ Most organizations should not attempt all controls at once. Adopt GATE in phases
 
 - C17 is deployed in observe-only mode; discovery events are emitting; classifier coverage reaches 100% of governed workload identities within the detection window.
 
-**Phase 2 - Make incidents reproducible and defensible\**
-\
+### Phase 2 - Make incidents reproducible and defensible
+
 Add:
 
 - C08 Prompt and Content Injection Defence - full depth: guard model scanning for indirect injection via retrieved content and tool outputs, perplexity-based anomaly detection, adversarial regression tests for injection in CI
@@ -78,9 +107,11 @@ Add:
 
 - C18 quality decisions emitted on every memory retrieval; signed quality bundle in place; enforce mode active for at least one production content class.
 
-**Phase 3 - Govern distributed and multi-agent autonomy\**
-\
-**Add:**
+- **C20 output classification events emitted on every final agent response; output classification bundle versioned and signed; sensitivity_tier populated per output; human review gate wired for regulated categories.**
+
+### Phase 3 - Govern distributed and multi-agent autonomy
+
+Add:
 
 - C15 Orchestration Control Plane (routing, backpressure, safe rollouts)
 
@@ -88,9 +119,11 @@ Add:
 
 - C16 Continuous Adversarial Validation and high-assurance verification (as needed)
 
-- C19 Model Behaviour Monitoring (depends on C13 at Phase 2 coverage). Baseline profiler runs against the current ABOM. Drift detector operates in log-only minimum for bounded tier.
+- **C18 Data Quality Gates - promote to full enforce across all content classes for high-privilege tier.** Provenance chain enforcement (chain-to-registered-source) is required at high_privilege.
 
-- C18 promoted to full enforce mode for high-privilege tier (freshness, confidence, and provenance gates all active).
+- **C19 Model Behaviour Monitoring.** C19 belongs in Phase 3 because it depends on C13 (Phase 2) for input data, on C16 to differentiate adversarial from drift causes, and on the orchestration plane (C15) to consume tier-reduction response actions.
+
+- **C20 Agent-to-Human Output Validation - promote to enforce mode at high_privilege.** The action matrix is enforced. `hold_for_review` and `hitl_review` obligations are active for configured regulated categories. The bundle's default entry at high_privilege tier MUST be `hold_for_review`. Streaming output to the user is disabled at high_privilege tier for any agent whose action matrix can produce a hold or review obligation. This streaming constraint applies in v1.4 pending the streaming-aware classification path scoped to v1.5.
 
 **Exit criteria:**
 
@@ -103,3 +136,5 @@ Add:
 - C19 baseline is signed and tied to current ABOM; drift detector produces decisions on the configured cadence; response routing applies at least flag-and-review for bounded tier and tier-reduction or halt for high-privilege tier.
 
 - C18 enforce mode active across all content classes for high-privilege tier; provenance verification fully enabled.
+
+- **C20 action matrix enforced at high_privilege; hold_for_review and hitl_review obligations resolving against signed HITL Decision Records; bundle-default-hold guardrail policy active; output classification coverage at 100% of final responses.**

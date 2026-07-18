@@ -66,3 +66,89 @@ corrected T1520 spec (six-framework alignment: NIST AI RMF, ISO/IEC 42001, OWASP
 AISVS, MITRE ATLAS, NIST SSDF, EU AI Act). It is the source of truth, so there is
 nothing to diverge from. Headings were demoted two levels (`#` to `###`, `##` to
 `####`) so the control nests under the Layer 3 chapter; content is unchanged.
+
+## v1.4 fix pass (2026-07-04)
+
+The v1.4 fix pass restored missing content, applied the staged paper-updates 06,
+07, 08, and 10, and rewrote the reference repository chapter for the v1.4 release
+posture. Executed in HTML-first mode; PDF-only concerns skipped.
+
+**Restored from v1.3 docx (Table extraction via python-docx):**
+
+- 4.2 Principle Evidence Reference Table - 8 rows restored; extended for the
+  v1.4 defence-in-depth and evidence-first entries to name C20.
+- 6.3 Component Responsibilities Table - 16 rows restored, extended with
+  Discovery Service (C17), Assurance Plane (C19), Output Classifier (C20).
+- Chapter 7 Controls at a Glance - restored the full 20-row control summary
+  table with Layer, Boundary, Enforces, and Produces-Evidence columns.
+- 15.5 Minimum Controls by Tool Category - 5-row table (read_only, reversible,
+  irreversible, financial, infrastructure) restored with C17, C18, C19, C20
+  entries added per category.
+- Appendix B.1 NIST AI RMF and B.2 ISO/IEC 42001 - 20-row mapping tables
+  restored; C20 rows added per the v1.4 six-framework alignment.
+
+**Staged updates applied:**
+
+- Update 06 (Standard Mappings appendix): B.3 AISVS, B.4 ATLAS, B.5 SSDF
+  entries added after the ISO section. B.1 and B.2 preambles updated to mention
+  C20.
+- Update 07 finish: Phase 2 and Phase 3 exit criteria extended with the C20
+  entries. Phase 3 add-list now carries the C20 enforce-mode promotion.
+- Update 08 Part A (control count): "16 Core Controls" and "19 controls" swept
+  to "20 Core Controls" and "20 controls" respectively. "C01-C16" in scope
+  chapter reworded to "the enrolment-dependent controls".
+- Update 08 Part B (conformance section): Check17 and Check18 reclassified as
+  PARTIAL-or-AUTOMATED conditional on bundle-store URI configuration. Check20
+  paragraph added as PARTIAL. Conformance totals line added: 9 AUTOMATED / 11
+  PARTIAL default; 11 / 9 with both URIs configured. C20 reporting metrics
+  added to the Suggested Conformance Reporting list.
+- Update 10 (changelog v1.4 entry): inserted as the leading "Changes since v1.3"
+  section; existing "Changes since v1.2.8" preserved as the v1.3 entry below.
+  Known Issues / deferred to v1.5 section included at the same heading level
+  as Added / Changed / Deprecated.
+
+**Rendering artifacts and prose fixes:**
+
+- ERRATA leak in `controls/C20-output-validation.md` line 203 removed; the
+  correct event-type and retention-class prose stands alone with no editorial
+  annotation.
+- `**` artifacts in chapters 6 and 7 (Phase 1 / 2 / 3 headers, Implementation
+  note) rewritten as proper H3 headings and inline emphasis.
+- C20's local References subsection removed; EU AI Act, OWASP AISVS, MITRE
+  ATLAS, NIST SSDF, and OKF citations consolidated in the main References
+  chapter with Harvard entries.
+
+**Roadmap items added (Part 3 of the fix prompt):**
+
+- Chapter 10 rewritten: release-status callout aligned to v1.4; runner status
+  reflects 9-of-20 automated (11-of-20 when configured); gate-rust,
+  gate-fuzz, and gate-knowledge added to the repository inventory with scope
+  paragraphs and cross-language guarantee prose.
+- C16 (chapter 14): MITRE ATLAS alignment subsection added with in-scope
+  technique families, out-of-scope families, and the pointer to
+  `gate-conformance/mappings/mitre-atlas.yaml`.
+- Appendix A2: "Cross-framework mappings tracked outside the paper" pointer
+  added so operators seeking EU AI Act, DORA, or HIPAA can find the
+  gate-conformance mappings directory. Note: DORA and HIPAA mappings are not
+  yet published as separate YAML files; the pointer names the tracking
+  location, not a published artefact. Flag to Andrew if the intent is to
+  publish these before v1.4 goes live.
+
+**Deferred (proposals, awaiting sign-off):**
+
+- Paper update 13 - Framework improvement proposals: fail-closed matrix gaps
+  (chapter 15.1), glossary debt (Appendix F), executive-summary boundary
+  model framing, and the output-boundary scope statement (last one already
+  applied in the scope chapter as part of the fix pass). Draft at
+  `v1.4/paper-updates/13-framework-improvement-proposals.md`.
+
+**Style sweep after the fix pass:**
+
+- 0 em dashes across `chapters/`, `controls/`, and `index.qmd`.
+- 0 `**` artifacts remaining outside inline emphasis.
+- 0 `ERRATA` / `Insertion point` markers.
+- References chapter contains NIST, ISO/IEC 42001, EU AI Act, OWASP AISVS,
+  MITRE ATLAS, NIST SSDF, and Google Cloud (OKF) entries in Harvard form.
+
+Verification against the v1.4 prompt's Part 5 checklist is at the tail of the
+review report handed back with this fix pass.

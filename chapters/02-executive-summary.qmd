@@ -16,7 +16,7 @@ Agentic AI is crossing from "assistive" software into systems that plan and exec
 
 The core challenge is architectural: models are probabilistic, can be influenced by adversarial inputs, and are inherently non-deterministic. Enterprises cannot safely rely on prompt-only guardrails. Trust must be engineered into the surrounding platform with controls that are deterministic, enforceable, and auditable outside the model.
 
-GATE ( Governed Agent Trust Environment) is a framework and reference architecture that defines 16 Core Controls, organized into four layers:
+GATE (Governed Agent Trust Environment) is a framework and reference architecture that defines 20 Core Controls, organized into four layers. The boundary model that v1.4 completes is: identity at instantiation, policy at execution, observation throughout, classification at delivery.
 
 1.  Identity & Integrity -- prove who/what is acting and that execution is untampered
 

@@ -82,6 +82,8 @@ Legend: ✅ required, ⭕ conditional (depends on data sensitivity / tenant / en
   C18 Data Quality Gates                                              ✅ (freshness, confidence)   ✅ (freshness, confidence, provenance)   Bounded tier MUST enforce freshness and confidence gates; provenance MAY be flag-only at this tier. High-Privilege tier MUST enforce all three. Action matrix per content class is defined in the signed quality bundle.
 
   C19 Model Behaviour Monitoring                                      ✅ (log-only minimum)        ✅ (full response routing)               Depends on C13. Bounded requires at minimum log-only drift decisions per dimension; flag-and-review is recommended. High-Privilege requires the full response router including tier reduction; halt via C06 is reserved for refusal-rate and per-tool-argument-distribution dimensions. Baselines MUST be tied to ABOM version.
+
+  C20 Agent-to-Human Output Validation                                ✅ (flag-only minimum)       ✅ (enforce mode)                        Bounded tier MUST emit classification events on every final response with `sensitivity_tier` populated. High-Privilege tier MUST enforce the action matrix with `hold_for_review` and `hitl_review` obligations active for configured regulated categories. Bundle default at high_privilege MUST be `hold_for_review`; streaming output disabled at high_privilege for any agent whose action matrix can produce a hold or review obligation.
   ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 Tier enforcement notes
@@ -172,6 +174,14 @@ Use this table to operationalize controls at the boundary where it matters most:
 
 Legend: ✅ required, ⭕ conditional (depends on data sensitivity / tenant / environment), - not required
 
+| Tool category | Examples | Risk profile | Minimum GATE controls required |
+|---|---|---|---|
+| Read-only | search, fetch record, query KB, list tickets | Data exposure, prompt injection via returned content, lateral access | ✅ C01; ✅ C03; ✅ C05; ✅ C07; ✅ C08; ✅ C13; ✅ C17; ✅ C18 (freshness on retrieved content); ⭕ C19 (drift monitoring recommended); ✅ C20 (classification at delivery) |
+| Reversible write | create draft ticket, update non-critical field, enqueue job with rollback | Unauthorized modifications, noisy automation, compounding errors | ✅ C01; ✅ C03; ✅ C05; ✅ C06 breakers; ✅ C07; ✅ C08; ✅ C09 pre-action constraints; ✅ C11 audit ledger; ✅ C13; ⭕ C10 replay (recommended for prod); ⭕ C12 signed actions (for elevated writes); ✅ C17; ✅ C18; ⭕ C19; ✅ C20 |
+| Irreversible write | delete record, purge data, send external email, publish content | Permanent harm, compliance incidents, irreversible state | ✅ C01; ✅ C03; ✅ C05; ✅ C06; ✅ C07; ✅ C08; ✅ C09; ✅ C10 replay; ✅ C11 ledger; ✅ C12 non-repudiation; ✅ C13; ⭕ C16 formal verification (strongly recommended for deletion / purge); ⭕ HITL gate (via policy obligation); ✅ C17; ✅ C18; ✅ C19; ✅ C20 (enforce at high_privilege) |
+| Financial | transfer funds, issue refund, create invoice, change bank details | Fraud, direct monetary loss, regulatory exposure | ✅ C01; ✅ C03; ✅ C05; ✅ C06; ✅ C07; ✅ C08; ✅ C09; ✅ C10; ✅ C11; ✅ C12; ✅ C13; ✅ C16 (formal invariants for limits / allowlists); ✅ HITL for thresholded actions; ⭕ C02 confidential execution if sensitive financial identifiers used; ✅ C17; ✅ C18 (freshness on rates / balances / account state); ✅ C19; ✅ C20 (regulated category enforcement) |
+| Infrastructure | deploy service, rotate secrets, change firewall, scale cluster, modify IAM | Massive blast radius, outages, privilege escalation | ✅ C01; ✅ C03; ✅ C05; ✅ C06; ✅ C07; ✅ C08; ✅ C09; ✅ C10; ✅ C11; ✅ C12; ✅ C13; ✅ C15 orchestration; ✅ C16 (for invariants like "no public exposure"); ⭕ C02 for sensitive secrets / config; ⭕ C14 secure multi-agent protocols if delegated changes occur; ✅ C17; ✅ C18 (freshness on infrastructure state); ✅ C19; ✅ C20 |
+
 Notes:
 
 - C05 (Tool Gateway + PaC) is non-negotiable once tools touch real systems.
@@ -182,7 +192,9 @@ Notes:
 
 - C16 (Formal verification) is the "high assurance" layer: start with a small set of hard invariants (limits, allowlists, forbidden states) and expand.
 
-- Apply ORM thresholds to dynamically require HITL or stronger verification as risk rises (e.g., higher transfer amounts, unusual destinations, abnormal tool patterns).
+- C20 (Output classification) is required at delivery for every tool category at bounded+ tiers; at high_privilege it enforces the action matrix and applies `hold_for_review` and `hitl_review` obligations to regulated-category responses. Streaming is disabled at high_privilege for agents whose matrix can produce holds or reviews.
+
+- Apply ORM thresholds to dynamically require HITL or stronger verification as risk rises (higher transfer amounts, unusual destinations, abnormal tool patterns).
 
 ## Operational Risk Modeling (ORM): The Autonomy Dial
 

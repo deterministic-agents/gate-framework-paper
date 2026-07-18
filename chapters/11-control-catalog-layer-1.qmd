@@ -1,6 +1,6 @@
 # The GATE Control Catalog
 
-GATE defines 19 controls across four layers. Each control includes:
+GATE defines 20 controls across four layers. Each control includes:
 
 - Why it exists (risk/attack it mitigates)
 

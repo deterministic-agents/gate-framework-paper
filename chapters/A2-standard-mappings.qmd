@@ -4,19 +4,98 @@
 
 This appendix provides an informative mapping from GATE controls to widely used governance frameworks to help security and GRC teams align implementation evidence. This mapping is a guide for alignment and does not imply certification or formal compliance.
 
-## GATE Controls → NIST AI RMF (GOVERN / MAP / MEASURE / MANAGE)
+## GATE Controls to NIST AI RMF (GOVERN / MAP / MEASURE / MANAGE)
 
 The table below maps GATE's control catalog to the [NIST AI Risk Management Framework](https://www.nist.gov/itl/ai-risk-management-framework) (National Institute of Standards and Technology, 2023) (AI RMF) functions - GOVERN, MAP, MEASURE, and MANAGE - to support evidence alignment and review workflows.
 
-The mapping is intent-based: it shows where each GATE control most directly contributes to risk governance, context understanding, measurement/monitoring, and operational risk treatment. Because NIST AI RMF is outcome-oriented and GATE is implementation-oriented, a single GATE control may align to multiple functions; the primary function listed reflects the control's dominant operational role.\
-\
-v1.3 extends this mapping to include C17 Agent Discovery and Shadow AI Detection (inventory completeness), C18 Data Quality Gates (retrieval-time quality enforcement), and C19 Model Behaviour Monitoring (drift detection).
+The mapping is intent-based: it shows where each GATE control most directly contributes to risk governance, context understanding, measurement / monitoring, and operational risk treatment. Because NIST AI RMF is outcome-oriented and GATE is implementation-oriented, a single GATE control may align to multiple functions; the primary function listed reflects the control's dominant operational role.
 
-## GATE Controls → ISO/IEC 42001 Alignment (High-level themes)
+v1.4 extends this mapping to twenty rows: v1.3 added C17 Agent Discovery and Shadow AI Detection (inventory completeness), C18 Data Quality Gates (retrieval-time quality enforcement), and C19 Model Behaviour Monitoring (drift detection). v1.4 adds C20 Agent-to-Human Output Validation (delivery-boundary classification and obligations).
 
-ISO/IEC 42001 is a management system standard. The mapping below ties GATE controls to typical management system themes: governance, risk management, operational controls, monitoring, incident response, and continual improvement.\
-\
-v1.3 extends this mapping to include C17 Agent Discovery and Shadow AI Detection (inventory completeness), C18 Data Quality Gates (retrieval-time quality enforcement), and C19 Model Behaviour Monitoring (drift detection).
+| GATE Control | NIST AI RMF Function | Rationale (short) |
+|---|---|---|
+| C01 Workload Identity and Attestation | GOVERN, MANAGE | Accountability, authorization, and containment boundaries |
+| C02 Confidential Execution | GOVERN, MANAGE | Protect sensitive data and ensure secure execution conditions |
+| C03 Supply Chain Integrity | GOVERN, MANAGE | Provenance, integrity, and change control for AI systems |
+| C04 Lifecycle Governance | GOVERN | Ownership, inventory, and lifecycle accountability |
+| C05 Tool Gateway + PaC | MANAGE | Enforce risk controls and constraints at execution time |
+| C06 Breakers and Emergency Stop | MANAGE | Incident containment and operational safety |
+| C07 Resource Governance | MANAGE | Control system behavior under load and cost constraints |
+| C08 Injection Defense | MAP, MANAGE | Threat identification and mitigations for adversarial inputs |
+| C09 Pre-Action Constraints | MANAGE | Enforce invariants and reduce consequence of failures |
+| C10 Deterministic Replay | MEASURE, MANAGE | Post-incident analysis, reproducibility, validation of fixes |
+| C11 Verifiable Audit Ledger | GOVERN, MEASURE | Auditability, integrity, and accountability evidence |
+| C12 Non-Repudiation | GOVERN, MEASURE | Traceability and defensible attribution for high-impact actions |
+| C13 Semantic Observability | MEASURE | Monitor behavior, detect anomalies, analyze intent and outcomes |
+| C14 Secure Multi-Agent Protocols | GOVERN, MANAGE | Secure interaction patterns and communication integrity |
+| C15 Orchestration Control Plane | MANAGE | Controlled deployment, routing, backpressure, safe scaling |
+| C16 Adversarial and Verification | MEASURE, MANAGE | Continuous evaluation and assurance for critical invariants |
+| C17 Agent Discovery and Shadow AI Detection | GOVERN, MAP | Inventory completeness and discovery of ungoverned AI systems |
+| C18 Data Quality Gates | MEASURE, MANAGE | Retrieval-time minimum quality enforcement for stored content |
+| C19 Model Behaviour Monitoring | MEASURE, MANAGE | Continuous statistical monitoring of model behaviour and governed response to drift |
+| C20 Agent-to-Human Output Validation | MEASURE, MANAGE | Delivery-boundary classification with sensitivity tier, regulated category, and obligation enforcement (hold / review / redact); action matrix produces the per-response risk treatment |
 
-**Implementation note:** Enterprises typically adopt GATE controls as "technical controls" under broader management system processes (risk assessment, change control, incident response). The conformance checks and evidence schemas in this framework are designed to support these broader governance requirements without requiring vendor-specific tooling.
+## GATE Controls to ISO/IEC 42001 Alignment (High-level themes)
 
+ISO/IEC 42001 is a management system standard. The mapping below ties GATE controls to typical management system themes: governance, risk management, operational controls, monitoring, incident response, and continual improvement.
+
+v1.4 extends this mapping to twenty rows: v1.3 added C17, C18, and C19; v1.4 adds C20.
+
+| GATE Control | ISO/IEC 42001 Theme | Typical evidence produced |
+|---|---|---|
+| C01 Identity and Attestation | Access control, operational control | Identity logs, attestation results, revocation proofs |
+| C02 Confidential Execution | Security and privacy controls | Attestation artifacts, secret access logs, redaction reports |
+| C03 Supply Chain Integrity | Change management, configuration control | Signed bundles, SBOMs, provenance, release approvals |
+| C04 Lifecycle Governance | Asset management, accountability | Inventory, owners, commissioning and decommission records |
+| C05 Tool Gateway + PaC | Operational control, policy enforcement | Policy decision records, deny / obligation enforcement logs |
+| C06 Breakers and Stop | Incident response, operational resilience | Breaker triggers, containment timing, freeze-and-capture evidence |
+| C07 Resource Governance | Capacity management, cost / risk control | Budgets, throttles, anomaly alerts, backpressure events |
+| C08 Injection Defense | Risk treatment, threat mitigation | Detection metrics, block events, adversarial test results |
+| C09 Pre-Action Constraints | Risk treatment, operational safeguards | Invariant checks, verification outcomes, HITL gates |
+| C10 Deterministic Replay | Monitoring and audit support | Replay traces, snapshot pointers, replay success reports |
+| C11 Audit Ledger | Auditability, record integrity | Hash chain proofs, WORM retention configs, integrity reports |
+| C12 Non-Repudiation | Accountability, legal defensibility | Signatures, verification logs, signed approval / override records |
+| C13 Semantic Observability | Monitoring, measurement | Semantic traces, dashboards, correlation coverage |
+| C14 Agent Protocols | Secure operations | Schema validation logs, signature checks, nonce replay detection |
+| C15 Orchestration | Operational planning and control | Workflow histories, rollback events, dependency containment |
+| C16 Adversarial and Verification | Continual improvement, assurance | CI gates, exploit trends, counterexample library |
+| C17 Agent Discovery and Shadow AI Detection | AI system inventory and identification (A.6), operational planning and control (clause 8.1) | Discovery events, remediation outcomes, exception register with TTLs, inventory reconciliation reports, classifier bundle signature log |
+| C18 Data Quality Gates | Data quality (A.7.4), data provenance (A.7.5), information for interested parties (A.8.3) | Quality decision logs, quality bundle versions, content-class TTL configuration, provenance verification reports, write-time rejection logs |
+| C19 Model Behaviour Monitoring | Performance monitoring of AI systems (A.9), operations of the AI system (A.8.2), monitoring / measurement / analysis / evaluation (clause 9.1) | Signed baselines per ABOM version, drift decisions with statistical evidence, response action records, re-baselining log with approver identity |
+| C20 Agent-to-Human Output Validation | Operations of the AI system (A.8.2), information for interested parties (A.8.3), performance monitoring (A.9) | `gate.output.classification` events, signed output classification bundle, action-matrix coverage report, HITL decision records for `hitl_review` obligations, per-tier obligation distribution report |
+
+**Implementation note.** Enterprises typically adopt GATE controls as "technical controls" under broader management system processes (risk assessment, change control, incident response). The conformance checks and evidence schemas in this framework are designed to support these broader governance requirements without requiring vendor-specific tooling.
+
+## GATE Controls to OWASP AISVS
+
+### OWASP AI Security Verification Standard
+
+AISVS is a testable controls catalogue for AI systems, organised in twelve chapters with a verification-level model (OWASP, 2026). The v1.4 mapping is pinned to AISVS v1.0 content at commit `aadf83a77b44cc5c6ee3033affe0d8c538dc3748` and uses the three-level requirement form `v1.0-Cx.y.z`. AISVS chapter numbers (C1 to C12) collide visually with GATE control numbers (C01 to C20); throughout this entry "AISVS chapter Cn" disambiguates from the GATE controls. GATE has its strongest coverage in AISVS chapter C9 (agentic security: execution budgets, loop control, circuit breakers - 29 of its 34 requirements already covered), AISVS chapter C12 (monitoring, logging, and anomaly detection), AISVS chapter C7 (model behaviour and output control, via C20), AISVS chapter C5 (access control and identity), and AISVS chapter C8 (memory, embeddings, and vector database security). Out of GATE's scope: AISVS chapter C1 (training data governance), AISVS chapter C3 (model authorization and integrity), AISVS chapter C6 (model artifact integrity), most of AISVS chapter C4 (AI workload sandboxing internals), and parts of AISVS chapter C11 (alignment, safety, and robustness testing). GATE governs agents at runtime, not the model training pipeline.
+
+**Scope boundary.** GATE consumes integrity signals from C03 but does not defend the model interior. Operators assembling a control suite that covers training and runtime use AISVS plus GATE in combination.
+
+**Full mapping:** `gate-conformance/mappings/owasp-aisvs.yaml`. The per-requirement triage at `gate-conformance/mappings/owasp-aisvs-triage.yaml` is the structured input for v1.5 Workstream 4.
+
+## GATE Controls to MITRE ATLAS
+
+### MITRE ATLAS
+
+ATLAS is a knowledge base of adversary tactics and techniques against AI-enabled systems, structured in the ATT&CK style (MITRE, 2026). The v1.4 mapping is pinned to ATLAS content release `2026.05` (ATLAS data version 5.6.0) and covers 28 techniques and sub-techniques. GATE has full coverage on the runtime adversary techniques: prompt injection, direct and indirect (AML.T0051 family), external harms including user harm (AML.T0048 family, via C05 and C20), exfiltration via the AI inference API (AML.T0024, via C07 and C20), AI agent tool invocation (AML.T0053), RAG poisoning (AML.T0070), agent context and memory poisoning (AML.T0080 family), trusted output component manipulation including citation fabrication (AML.T0067 family, via C20 and C18), poisoned agent tools reaching execution (AML.T0011.002, via C05 and C17), and crafted adversarial data exercised by the C16 harness (AML.T0043). Coverage is partial where mitigation depends on operator configuration or classifier completeness: denial of AI service (AML.T0029), system prompt extraction (AML.T0056), retrieval content crafting (AML.T0066), agent tool poisoning and its distribution path (AML.T0099, AML.T0110, AML.T0104), chat history manipulation (AML.T0092), and model integrity erosion surfacing as drift (AML.T0031, via C19).
+
+**Scope boundary.** Out of scope, with per-technique rationale in the mapping's out-of-scope section: the model-interior and training-pipeline attacks AML.T0018 (Manipulate AI Model), AML.T0020 (Poison Training Data), AML.T0019 and AML.T0058 (Publish Poisoned Datasets and Models), AML.T0015 (Evade AI Model), and the inference-API privacy and extraction sub-techniques AML.T0024.000 (Infer Training Data Membership) and AML.T0024.002 (Extract AI Model). Operators MUST NOT treat a passing C16 run as evidence of model-level resistance to attack.
+
+**Full mapping:** `gate-conformance/mappings/mitre-atlas.yaml`. The C16 spec carries the specific harness technique list with one-line justifications each.
+
+## GATE Controls to NIST SSDF
+
+### NIST Secure Software Development Framework
+
+SSDF (NIST SP 800-218) is a controls catalogue for the secure software development lifecycle (NIST, 2022). The v1.4 mapping is intentionally narrow: GATE intersects SSDF at C03 (Artifact Integrity and Supply Chain, mapping to PS.1, PS.2, PS.3) and C05 (Tool Gateway, mapping to PW.4 and PW.7 for the tool registry and policy bundle review surfaces). SSDF practices covering requirements, training, threat modelling, source code review, and vulnerability response are outside GATE's runtime-governance scope.
+
+**Scope boundary.** SSDF is a software-development practice catalogue, not a runtime enforcement framework. GATE assumes a functioning secure SDLC programme and consumes its outputs as inputs to the runtime controls.
+
+**Full mapping:** `gate-conformance/mappings/nist-ssdf.yaml`.
+
+## Cross-framework mappings tracked outside the paper
+
+The gate-conformance repository holds additional mappings that are informative but not carried in the paper narrative. Operators looking for EU AI Act, DORA, HIPAA, or sector-specific mappings should consult `gate-conformance/mappings/`. Where a mapping is planned but not yet published, the tracking issue in gate-conformance names the scope and the target release.

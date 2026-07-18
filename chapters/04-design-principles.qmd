@@ -164,6 +164,17 @@ Operational check
 
 - Inventory shows tool allowlists per agent; no agent has wildcard permissions for high-risk tool categories.
 
-##  Principle Evidence Reference Table
+## Principle Evidence Reference Table
 
 Each principle states (1) the required property, (2) where it is enforced, and (3) how to test it.
+
+| Principle | Invariant (must be true) | Enforcement points | Test / evidence (must be demonstrable) |
+|---|---|---|---|
+| Zero trust for agents | No agent runtime is trusted by network location. Every agent instance is uniquely identifiable and revocable. | Identity provider, Tool Gateway, Memory Gateway, Orchestrator | 100% of privileged requests include verified `agent_instance_id` + attestation status; revocation blocks new tool / memory actions immediately. |
+| Deterministic boundaries | The agent runtime proposes actions; the control plane authorizes and executes. No direct side effects from agent runtime. | Tool Gateway, Memory Gateway, network policy, IAM | 0 tool calls originate from agent runtime identity; all originate from gateway identity. Bypass attempts fail. |
+| Defence in depth | High-impact actions require multiple independent gates; no single mechanism is assumed sufficient. | Gateway (policy + schema + budgets), Orchestrator (backpressure), Ledger (integrity), Replay (reproducibility), Output Classifier (C20 at delivery) | For each high-impact tool category, verify at least two independent enforcement checks execute per request (e.g. allow + invariant + budget). For final responses at high_privilege tier, verify C20 classification event exists and obligations were enforced. |
+| Separation of duties | The component that proposes actions cannot authorize them or modify enforcement. Agents cannot alter policies, evidence, or retention. | Policy deployment pipeline, gateway runtime config, evidence stores, secrets and keys, bundle registries | Agent runtime has no write access to policy bundles, ledger configuration, evidence stores, or approval systems. Change logs prove separation. C20 output classification bundle and C18 quality bundle are signed and verified at load time. |
+| Evidence-first operations | Every governed action produces verifiable records sufficient for audit and incident reconstruction. | Tool Gateway, Ledger service, Replay recorder, Observability pipeline, C20 Output Classifier | Given a `run_id`, retrieve decision records + tool envelopes + ledger refs + replay trace steps + classification events. Ledger integrity verifies (hash chain + signatures). |
+| Composability | Controls are services with versioned contracts; implementations can vary but must preserve invariants. | Contracts layer (schemas), conformance harness | Components interoperate via tool envelope, decision, ledger, replay, quality, drift, and classification schemas. Conformance suite passes across different implementations. |
+| Fail closed for side effects | If enforcement or required evidence emission fails, side-effecting actions do not execute. | Gateway, policy engine integration, ledger sink, approval gate, output classifier | Chaos test: policy engine down produces denied writes. Ledger sink unavailable in high-privilege produces denied writes. C20 classifier or bundle unavailable holds delivery at high_privilege. |
+| Least privilege by capability | Agents have explicit, minimal capabilities scoped by tenant, env, time, and tool category. | Policy engine, tool allowlists, budgets, quotas | Inventory shows per-agent allowlists; no wildcard permissions for high-risk categories. Budgets enforce limits. |
