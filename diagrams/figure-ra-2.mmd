@@ -1,0 +1,39 @@
+%% GATE Logical Architecture - v1.3
+%% Updated for v1.3:
+%%   - Trust Services row gains C17 Discovery Service
+%%   - Trust Services row gains C19 Assurance Plane
+%%   - Memory Service note includes C18 quality gates
+flowchart TB
+    classDef path fill:#e8f0fe,stroke:#1a73e8,color:#000;
+    classDef trust fill:#e6f4ea,stroke:#188038,color:#000;
+    classDef new fill:#f3e8fd,stroke:#9334e6,color:#000;
+
+    subgraph Exec["Execution Path"]
+        direction TB
+        AR["Agent Runtime<br/>LLM + Tools SDK"]:::path
+        TG["Tool Gateway + Policy Engine<br/>OPA / Rego"]:::path
+        Orc["Orchestrator<br/>routing + scheduling + budgets"]:::path
+        Tools["Tools and APIs"]:::path
+        AR --> TG --> Orc --> Tools
+    end
+
+    subgraph Trust["Trust Services"]
+        direction LR
+        Id["Identity + Attestation<br/>SPIRE / SPIFFE + TEE attest"]:::trust
+        AL["Audit Ledger<br/>hash chain + WORM + replay store"]:::trust
+        Mem["Memory Service<br/>ACL + TTL + provenance + poisoning<br/>+ C18 quality gates"]:::trust
+        Obs["Observability + HITL + ORM<br/>C13 semantic traces"]:::trust
+        Disc["C17 Discovery Service<br/>network + asset + identity"]:::new
+        Asr["C19 Assurance Plane<br/>baseline + drift + response"]:::new
+    end
+
+    AR -.->|identity claims| Id
+    TG -.->|policy decisions| AL
+    Orc -.->|memory ops| Mem
+    Tools -.->|telemetry| Obs
+
+    Disc -.->|"agent.discovered"| AL
+    Disc -.->|"enrol/terminate"| TG
+    Obs -.->|"C13 semantic stream"| Asr
+    Asr -.->|"drift_decision + response_action"| AL
+    Asr -.->|"tier reduction / emergency stop"| Orc

@@ -1,0 +1,33 @@
+%% C19 Model Behaviour Monitoring - flow diagram (new in v1.3)
+%% Portrait layout. C19 chain top, then C16, both write to ledger at bottom.
+flowchart TB
+    classDef telem fill:#e6f4ea,stroke:#188038,color:#000;
+    classDef assure fill:#f3e8fd,stroke:#9334e6,color:#000;
+    classDef adv fill:#fef7e0,stroke:#f9ab00,color:#000;
+    classDef gate fill:#e8f0fe,stroke:#1a73e8,color:#000;
+    classDef sink fill:#f8f9fa,stroke:#5f6368,color:#000;
+
+    AR["Agent runtimes"]:::gate
+    C13["C13 semantic event stream<br/>intent + tool choice + refusal +<br/>output length + confidence + retries"]:::telem
+
+    AR --> C13
+
+    Prof["Baseline profiler<br/>(per ABOM version)"]:::assure
+    Base[("Signed baseline<br/>baseline_hash + abom_hash")]:::assure
+    Det["Drift detector<br/>rolling windows 24h / 7d / 30d<br/>KS + chi-square tests"]:::assure
+    Router["Response router<br/>log / flag / ticket /<br/>tier reduce / halt"]:::assure
+
+    C13 --> Prof
+    Prof --> Base
+    Base -. compare .-> Det
+    C13 --> Det
+    Det -- "drift_decision" --> Router
+
+    Harn["C16 adversarial harness<br/>CI: injection, tool misuse,<br/>poisoning, replay regression"]:::adv
+    Harn -. "deploy gate" .-> AR
+
+    Router -- "tier reduce / halt" --> ORM["ORM autonomy dial<br/>or C06 emergency stop"]:::sink
+
+    Det -- "drift_decision" --> Ledger["GATE audit ledger<br/>drift_decision +<br/>response_action +<br/>adversarial_outcome (C16)"]:::sink
+    Router -- "response_action" --> Ledger
+    Harn -- "adversarial_outcome" --> Ledger

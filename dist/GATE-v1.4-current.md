@@ -2,8 +2,6 @@
 
 *A Cloud Reference Framework of Controls for Enterprise-Grade Trustworthy AI Agents*
 
-![](assets/images/hero.png){fig-align="center" width="70%"}
-
 Version: 1.4
 
 Copyright © 2026 Andrew Stevens.
@@ -578,7 +576,73 @@ GATE's controls aim to guarantee the following properties at runtime:
 
 The diagram below shows how adversarial influence enters an agent system and where GATE enforces deterministic control boundaries. Inputs from users, retrieved content, tool outputs, memory, and other agents can all shape agent decisions. GATE therefore treats the agent runtime as an untrusted proposer and concentrates enforcement at the tool, memory, orchestration, and evidence boundaries - where actions can be authenticated, authorized, constrained, and made auditable.
 
-![GATE threat model overview.](../assets/images/figure-threat-model.png){#fig-threat-model width="95%"}
+```mermaid
+%% Threat ingress paths and GATE enforcement boundaries - v1.3
+%% Updated for v1.3:
+%%   - New threat path: Ungoverned agents (shadow AI)
+%%   - C17 Discovery surface added as the new enforcement boundary for that path
+%%   - Memory boundary annotation now includes C18 quality
+flowchart TB
+    classDef threat fill:#fce8e6,stroke:#d93025,color:#000;
+    classDef ingress fill:#fef7e0,stroke:#f9ab00,color:#000;
+    classDef runtime fill:#e8f0fe,stroke:#1a73e8,color:#000;
+    classDef enforce fill:#e6f4ea,stroke:#188038,color:#000;
+    classDef sink fill:#f8f9fa,stroke:#5f6368,color:#000;
+    classDef new fill:#f3e8fd,stroke:#9334e6,color:#000;
+
+    User["User /<br/>Attacker"]:::threat
+    Ext["External Content<br/>Web, PDFs, email, tickets"]:::threat
+    ExtT["External Tools / APIs"]:::threat
+    Other["Other Agents"]:::threat
+    Shadow["Ungoverned agents<br/>(shadow AI, SaaS-embedded,<br/>untracked workloads)"]:::threat
+
+    Direct["Direct Prompt Injection"]:::ingress
+    Retr["Retrieval /<br/>Context Assembly"]:::ingress
+    ToolOut["Tool Outputs"]:::ingress
+    Cross["Cross-agent Manipulation"]:::ingress
+
+    AR["Agent Runtime"]:::runtime
+    Orc["Orchestrator<br/>routing + retries + backpressure"]:::runtime
+
+    TG["Tool Gateway<br/>schema + policy + budgets"]:::enforce
+    MG["Memory Gateway<br/>ACL + provenance + TTL<br/>+ C18 quality gates"]:::enforce
+    Disc["C17 Discovery<br/>network + asset + identity"]:::new
+
+    MemStore["Memory Store<br/>RAG / state"]:::sink
+    Tools["Tools / Side Effects"]:::sink
+    AL["Verifiable Audit Ledger"]:::sink
+    Rep["Replay Trace + Snapshots"]:::sink
+    CB["Circuit Breakers /<br/>Kill Switch"]:::sink
+    MP["Memory Poisoning detection"]:::sink
+
+    User --> Direct
+    Ext --> Retr
+    ExtT --> ToolOut
+    Other --> Cross
+    Shadow -- "untracked tool calls" --> Disc
+
+    Direct --> AR
+    Retr --> AR
+    ToolOut --> AR
+    Cross --> AR
+
+    AR -- "proposes tool call" --> Orc
+    AR -- "reads / writes" --> MG
+    Orc --> TG
+
+    Disc -. "enrol or terminate" .-> TG
+    Disc -. "discovered events" .-> AL
+
+    TG --> Tools
+    TG --> AL
+    TG --> Rep
+    TG --> CB
+
+    MG --> MemStore
+    MG --> MP
+```
+
+*GATE threat model overview.*
 
 **Figure TM.1 - Threat ingress paths and GATE enforcement boundaries. Adversarial influence enters via direct prompt injection (User / Attacker), retrieval and context assembly (External Content), tool outputs (External Tools / APIs), cross-agent manipulation (Other Agents), and ungoverned agents that bypass the control plane entirely (Shadow AI). GATE concentrates enforcement at the Tool Gateway, Memory Gateway, and C17 discovery boundaries, and forces all evidence through the verifiable audit ledger.**
 
@@ -645,7 +709,38 @@ The observability pipeline provides signals to ORM risk scoring (autonomy dial).
 
 In the following diagram, the tool gateway and memory gateway are the only sanctioned egress points from the agent runtime; all evidence and risk signals are downstream of these enforcement points. Figure RA.1 shows the main runtime path. The C17 Discovery plane (Figure 17.1) and the C19 Assurance plane (Figure 19.1) operate alongside this path; they are described in their respective control sections.
 
-![Figure RA.1 - GATE Trust Pipeline (logical). The agent runtime emits tool requests through the GATE Tool Gateway and memory operations through the GATE Memory Gateway. The C18 quality gate evaluates every retrieval before it reaches the memory stores. Both gateways write evidence through a chain that terminates at the audit ledger (WORM-backed), the replay recorder, and the observability pipeline, which feeds ORM autonomy scoring. The C17 Discovery plane and C19 Assurance plane operate alongside this main path; see Figures 17.1 and 19.1.](../assets/images/figure-ra-1.png){#fig-ra-1 width="60%"}
+```mermaid
+%% GATE Trust Pipeline (logical) - v1.3
+%% Tall portrait layout: two-column main flow with evidence stacked below.
+flowchart TB
+    classDef runtime fill:#e8f0fe,stroke:#1a73e8,color:#000;
+    classDef gateway fill:#fef7e0,stroke:#f9ab00,color:#000;
+    classDef store fill:#fce8e6,stroke:#d93025,color:#000;
+    classDef sink fill:#e6f4ea,stroke:#188038,color:#000;
+    classDef adj fill:#f3e8fd,stroke:#9334e6,color:#000;
+
+    AR["Agent runtime - LLM + SDK"]:::runtime
+
+    AR -- "tool request" --> TG["GATE Tool Gateway<br/>auth, policy, budget, signing"]:::gateway
+    AR -- "memory read/write" --> MG["GATE Memory Gateway<br/>ACL, TTL, provenance, poisoning"]:::gateway
+
+    TG -. "obligation" .-> HITL["HITL approval<br/>(optional gates)"]:::gateway
+    MG --> QG["C18 Quality Gate<br/>freshness, confidence, provenance"]:::gateway
+
+    TG -- "approved" --> Tools["Enterprise tools and APIs"]:::store
+    QG --> Mem["Memory stores<br/>vector and state"]:::store
+
+    Tools --> Ledger
+    Mem --> Ledger
+
+    Ledger["GATE audit ledger - hash chain to WORM"]:::sink
+    Ledger --> Replay["GATE replay recorder - traces and snapshots"]:::sink
+    Replay --> Obs["Observability pipeline - OpenTelemetry + C13 semantic traces"]:::sink
+    Obs --> ORM["ORM risk scoring - autonomy dial"]:::adj
+    ORM -. "posture feedback" .-> AR
+```
+
+*Figure RA.1 - GATE Trust Pipeline (logical). The agent runtime emits tool requests through the GATE Tool Gateway and memory operations through the GATE Memory Gateway. The C18 quality gate evaluates every retrieval before it reaches the memory stores. Both gateways write evidence through a chain that terminates at the audit ledger (WORM-backed), the replay recorder, and the observability pipeline, which feeds ORM autonomy scoring. The C17 Discovery plane and C19 Assurance plane operate alongside this main path; see Figures 17.1 and 19.1.*
 
 All tool and memory access is mediated by GATE enforcement points. The Tool Gateway authenticates requests, evaluates policy, enforces budgets, and optionally applies approval gates before tools execute. The Memory Gateway enforces ACLs, provenance checks, TTL, and poisoning controls for memory reads/writes. Every governed operation produces evidence through the audit ledger, replay recorder, and semantic observability pipeline; ORM consumes these signals to adjust autonomy.
 
@@ -663,7 +758,49 @@ The ORM risk scoring (autonomy dial) consumes observability (and optionally evid
 
 GATE's logical architecture separates **execution** (what happens) from **assurance** (what must be true and provable). The top row represents the execution path that produces side effects. The bottom row represents supporting trust services bound to each stage, enabling identity, integrity, evidence, and containment.
 
-![GATE logical architecture.](../assets/images/figure-ra-2.png){#fig-ra-2 width="70%"}
+```mermaid
+%% GATE Logical Architecture - v1.3
+%% Updated for v1.3:
+%%   - Trust Services row gains C17 Discovery Service
+%%   - Trust Services row gains C19 Assurance Plane
+%%   - Memory Service note includes C18 quality gates
+flowchart TB
+    classDef path fill:#e8f0fe,stroke:#1a73e8,color:#000;
+    classDef trust fill:#e6f4ea,stroke:#188038,color:#000;
+    classDef new fill:#f3e8fd,stroke:#9334e6,color:#000;
+
+    subgraph Exec["Execution Path"]
+        direction TB
+        AR["Agent Runtime<br/>LLM + Tools SDK"]:::path
+        TG["Tool Gateway + Policy Engine<br/>OPA / Rego"]:::path
+        Orc["Orchestrator<br/>routing + scheduling + budgets"]:::path
+        Tools["Tools and APIs"]:::path
+        AR --> TG --> Orc --> Tools
+    end
+
+    subgraph Trust["Trust Services"]
+        direction LR
+        Id["Identity + Attestation<br/>SPIRE / SPIFFE + TEE attest"]:::trust
+        AL["Audit Ledger<br/>hash chain + WORM + replay store"]:::trust
+        Mem["Memory Service<br/>ACL + TTL + provenance + poisoning<br/>+ C18 quality gates"]:::trust
+        Obs["Observability + HITL + ORM<br/>C13 semantic traces"]:::trust
+        Disc["C17 Discovery Service<br/>network + asset + identity"]:::new
+        Asr["C19 Assurance Plane<br/>baseline + drift + response"]:::new
+    end
+
+    AR -.->|identity claims| Id
+    TG -.->|policy decisions| AL
+    Orc -.->|memory ops| Mem
+    Tools -.->|telemetry| Obs
+
+    Disc -.->|"agent.discovered"| AL
+    Disc -.->|"enrol/terminate"| TG
+    Obs -.->|"C13 semantic stream"| Asr
+    Asr -.->|"drift_decision + response_action"| AL
+    Asr -.->|"tier reduction / emergency stop"| Orc
+```
+
+*GATE logical architecture.*
 
 **Figure RA.2 - GATE Logical Architecture. The Execution Path (top) carries the agent runtime through the Tool Gateway and Policy Engine, the Orchestrator, and out to enterprise Tools and APIs. The Trust Services row (bottom) bind to each stage: Identity and Attestation, Audit Ledger, Memory Service (now including C18 quality gates), and Observability, HITL, and ORM. v1.3 adds the C17 Discovery Service and the C19 Assurance Plane as new Trust Services that feed and consume the runtime path respectively.**
 
@@ -1859,7 +1996,37 @@ Invariants the control guarantees:
 
 - The classifier's training or rule set is versioned, signed (C03), and hashed into the discovery event so a discovery decision can be replayed (C10).
 
-![Figure 17.1 - C17 Agent Discovery and Shadow AI Detection. Three detection mechanisms (network, asset inventory, identity classifier) feed a candidate store. The C17 discovery plane is governed by a signed classifier bundle and emits two event types. The candidate is routed to the C04 lifecycle service, which enrols, terminates, or records an exception with TTL.](../assets/images/figure-c17-1.png){#fig-c17-1 width="58%"}
+```mermaid
+%% C17 Agent Discovery and Shadow AI Detection - flow diagram (new in v1.3)
+%% Portrait layout: linear chain top-to-bottom.
+flowchart TB
+    classDef detect fill:#fef7e0,stroke:#f9ab00,color:#000;
+    classDef plane fill:#f3e8fd,stroke:#9334e6,color:#000;
+    classDef gate fill:#e6f4ea,stroke:#188038,color:#000;
+    classDef sink fill:#e8f0fe,stroke:#1a73e8,color:#000;
+    classDef bad fill:#fce8e6,stroke:#d93025,color:#000;
+
+    Shadow["Unenrolled workloads<br/>calling LLM endpoints or<br/>registered tools"]:::bad
+
+    Shadow --> Net["Network detector<br/>VPC / NSG flow logs<br/>+ Tool Gateway ingress"]:::detect
+    Net --> Asset["Asset inventory integrator<br/>AWS Config / Azure Policy /<br/>GCP Asset Inventory"]:::detect
+    Asset --> IDcls["Workload identity classifier<br/>tool stream vs C04 inventory"]:::detect
+
+    IDcls --> Class["C17 classifier engine<br/>(signed classifier_bundle_hash)"]:::plane
+    Class --> Cand["Candidate store"]:::plane
+
+    Cand --> Ledger["GATE audit ledger<br/>agent.discovered<br/>agent.remediation_outcome"]:::sink
+
+    Cand --> C04["C04 lifecycle service<br/>state machine + Commission tickets"]:::gate
+
+    C04 -- "enrol path" --> AR["Agent runtimes<br/>(C04 commissioned)"]:::sink
+    C04 -- "terminate:<br/>IdP revoke + Tool Gateway deny + egress block" --> Shadow
+    C04 -. "exception (TTL)" .-> Cand
+
+    AR -. "baseline reference" .-> IDcls
+```
+
+*Figure 17.1 - C17 Agent Discovery and Shadow AI Detection. Three detection mechanisms (network, asset inventory, identity classifier) feed a candidate store. The C17 discovery plane is governed by a signed classifier bundle and emits two event types. The candidate is routed to the C04 lifecycle service, which enrols, terminates, or records an exception with TTL.*
 
 **How**
 
@@ -2635,7 +2802,43 @@ These are different detection mechanisms operating on different signals at diffe
 
 The two controls share an evidence destination (C11 ledger, C13 semantic event stream as input) but have independent decision logic, separate bundles, and distinct ledger event types: gate.assurance.adversarial_outcome (C16) and gate.assurance.drift_decision (C19).
 
-![Figure 19.1 - C19 Model Behaviour Monitoring and the C16 boundary. C19 (left subgraph) is continuous and statistical: the baseline profiler produces a signed baseline per ABOM version, the drift detector evaluates rolling windows against it, and the response router emits configured actions. C16 (right subgraph) is event-driven and adversarial: the CI harness runs known attack scenarios. Both write to the same ledger but as distinct event types.](../assets/images/figure-c19-1.png){#fig-c19-1 width="42%"}
+```mermaid
+%% C19 Model Behaviour Monitoring - flow diagram (new in v1.3)
+%% Portrait layout. C19 chain top, then C16, both write to ledger at bottom.
+flowchart TB
+    classDef telem fill:#e6f4ea,stroke:#188038,color:#000;
+    classDef assure fill:#f3e8fd,stroke:#9334e6,color:#000;
+    classDef adv fill:#fef7e0,stroke:#f9ab00,color:#000;
+    classDef gate fill:#e8f0fe,stroke:#1a73e8,color:#000;
+    classDef sink fill:#f8f9fa,stroke:#5f6368,color:#000;
+
+    AR["Agent runtimes"]:::gate
+    C13["C13 semantic event stream<br/>intent + tool choice + refusal +<br/>output length + confidence + retries"]:::telem
+
+    AR --> C13
+
+    Prof["Baseline profiler<br/>(per ABOM version)"]:::assure
+    Base[("Signed baseline<br/>baseline_hash + abom_hash")]:::assure
+    Det["Drift detector<br/>rolling windows 24h / 7d / 30d<br/>KS + chi-square tests"]:::assure
+    Router["Response router<br/>log / flag / ticket /<br/>tier reduce / halt"]:::assure
+
+    C13 --> Prof
+    Prof --> Base
+    Base -. compare .-> Det
+    C13 --> Det
+    Det -- "drift_decision" --> Router
+
+    Harn["C16 adversarial harness<br/>CI: injection, tool misuse,<br/>poisoning, replay regression"]:::adv
+    Harn -. "deploy gate" .-> AR
+
+    Router -- "tier reduce / halt" --> ORM["ORM autonomy dial<br/>or C06 emergency stop"]:::sink
+
+    Det -- "drift_decision" --> Ledger["GATE audit ledger<br/>drift_decision +<br/>response_action +<br/>adversarial_outcome (C16)"]:::sink
+    Router -- "response_action" --> Ledger
+    Harn -- "adversarial_outcome" --> Ledger
+```
+
+*Figure 19.1 - C19 Model Behaviour Monitoring and the C16 boundary. C19 (left subgraph) is continuous and statistical: the baseline profiler produces a signed baseline per ABOM version, the drift detector evaluates rolling windows against it, and the response router emits configured actions. C16 (right subgraph) is event-driven and adversarial: the CI harness runs known attack scenarios. Both write to the same ledger but as distinct event types.*
 
 **How**
 
@@ -4042,7 +4245,40 @@ This appendix provides minimal reference architectures for AWS, Azure, and GCP. 
 
 ## A. Minimal Reference Deployment (logical diagram)
 
-![Figure A.1 - Minimal Reference Deployment (logical). The cloud-agnostic GATE reference deployment. Agent runtime traffic flows through the GATE tool gateway and GATE memory gateway. The Memory Gateway invokes the C18 quality gate before content reaches the memory stores. The audit ledger and downstream evidence sinks form a tamper-evident chain. C17 discovery and C19 assurance operate as side planes that emit into the audit ledger.](../assets/images/figure-cloud-a-minimal-reference.png){#fig-cloud-a width="58%"}
+```mermaid
+%% A. Minimal Reference Deployment (logical) - v1.3
+%% Portrait layout. Replaces image3.png (DARE Minimum).
+flowchart TB
+    classDef runtime fill:#e8f0fe,stroke:#1a73e8,color:#000;
+    classDef gateway fill:#fef7e0,stroke:#f9ab00,color:#000;
+    classDef store fill:#fce8e6,stroke:#d93025,color:#000;
+    classDef sink fill:#e6f4ea,stroke:#188038,color:#000;
+    classDef adj fill:#f3e8fd,stroke:#9334e6,color:#000;
+
+    AR["Agent runtime - LLM + SDK"]:::runtime
+
+    AR -- "tool request" --> TG["GATE tool gateway"]:::gateway
+    AR -- "memory read/write" --> MG["GATE memory gateway"]:::gateway
+
+    TG --> OPA["OPA policy engine"]:::gateway
+    MG --> QG["C18 quality gate"]:::gateway
+
+    TG -- "approved" --> Tools["Enterprise tools and APIs"]:::store
+    QG --> Mem["Memory stores - vector and state"]:::store
+
+    Tools --> Ledger["Audit ledger - hash chain to WORM"]:::sink
+    Mem --> Ledger
+    Ledger --> Replay["Replay recorder - traces and snapshots"]:::sink
+    Replay --> Obs["Observability - OpenTelemetry + C13 traces"]:::sink
+
+    Disc["C17 discovery service<br/>network + asset + identity"]:::adj
+    Disc -. "enrol / terminate" .-> TG
+
+    Asr["C19 assurance plane<br/>baseline + drift + response"]:::adj
+    Obs --> Asr
+```
+
+*Figure A.1 - Minimal Reference Deployment (logical). The cloud-agnostic GATE reference deployment. Agent runtime traffic flows through the GATE tool gateway and GATE memory gateway. The Memory Gateway invokes the C18 quality gate before content reaches the memory stores. The audit ledger and downstream evidence sinks form a tamper-evident chain. C17 discovery and C19 assurance operate as side planes that emit into the audit ledger.*
 
 Minimum invariant: the agent never talks to tools or memory directly. Everything goes through GATE gateways.
 
@@ -4080,7 +4316,45 @@ Minimum invariant: the agent never talks to tools or memory directly. Everything
 
 ### C1. Minimal deployment diagram (AWS)
 
-![Figure C.1 - Minimal deployment diagram (AWS). The GATE tool gateway and memory gateway services run on EKS or ECS. The Memory Gateway invokes the C18 quality gate before retrieval reaches DynamoDB, S3, or OpenSearch. The audit ledger writes to S3 Object Lock (WORM); the replay recorder writes to S3; observability uses CloudWatch and OpenTelemetry. C17 discovery uses AWS Config, VPC Flow Logs, and Tool Gateway ingress. C19 consumes the C13 stream out of observability.](../assets/images/figure-cloud-c-aws.png){#fig-cloud-c width="48%"}
+```mermaid
+%% C1. Minimal deployment diagram (AWS) - v1.3
+%% Portrait layout. Replaces image5.png.
+flowchart TB
+    classDef runtime fill:#e8f0fe,stroke:#1a73e8,color:#000;
+    classDef gateway fill:#fef7e0,stroke:#f9ab00,color:#000;
+    classDef store fill:#fce8e6,stroke:#d93025,color:#000;
+    classDef sink fill:#e6f4ea,stroke:#188038,color:#000;
+    classDef adj fill:#f3e8fd,stroke:#9334e6,color:#000;
+
+    subgraph AWS["AWS"]
+        direction TB
+
+        AR["EKS or ECS agent runtime"]:::runtime
+
+        AR -- "tool request" --> TG["GATE tool gateway service"]:::gateway
+        AR -- "memory read/write" --> MG["GATE memory gateway service"]:::gateway
+
+        TG --> OPA["OPA policy engine"]:::gateway
+        MG --> QG["C18 quality gate"]:::gateway
+
+        TG -- "approved" --> Ent["Enterprise APIs in VPC"]:::store
+        QG --> Mem["Memory stores<br/>DynamoDB + S3 + OpenSearch"]:::store
+
+        Ent --> AL["Audit ledger service"]:::sink
+        Mem --> AL
+        AL --> S3W["S3 Object Lock WORM"]:::sink
+        S3W --> RR["Replay recorder<br/>+ S3 trace store"]:::sink
+        RR --> OT["CloudWatch + OpenTelemetry"]:::sink
+
+        Disc["C17 discovery<br/>AWS Config + VPC Flow Logs +<br/>Tool Gateway ingress"]:::adj
+        Disc -. "enrol / terminate" .-> TG
+
+        Asr["C19 assurance plane<br/>baseline + drift detector +<br/>response router"]:::adj
+        OT -- "C13 stream" --> Asr
+    end
+```
+
+*Figure C.1 - Minimal deployment diagram (AWS). The GATE tool gateway and memory gateway services run on EKS or ECS. The Memory Gateway invokes the C18 quality gate before retrieval reaches DynamoDB, S3, or OpenSearch. The audit ledger writes to S3 Object Lock (WORM); the replay recorder writes to S3; observability uses CloudWatch and OpenTelemetry. C17 discovery uses AWS Config, VPC Flow Logs, and Tool Gateway ingress. C19 consumes the C13 stream out of observability.*
 
 ### C2. AWS Bill of Materials (BoM)
 
@@ -4144,7 +4418,45 @@ HITL / Workflow (optional)
 
 ### D1. Minimal deployment diagram (Azure)
 
-![Figure D.1 - Minimal deployment diagram (Azure). The GATE tool gateway and memory gateway services run on AKS. The Memory Gateway invokes the C18 quality gate before retrieval reaches Cosmos DB, Blob storage, or AI Search. The audit ledger writes to Blob immutability (WORM); the replay recorder writes to Blob; observability uses Azure Monitor and OpenTelemetry. C17 discovery uses Azure Policy, NSG Flow Logs, and Tool Gateway ingress. C19 consumes the C13 stream out of observability.](../assets/images/figure-cloud-d-azure.png){#fig-cloud-d width="48%"}
+```mermaid
+%% D1. Minimal deployment diagram (Azure) - v1.3
+%% Portrait layout. Replaces image6.png.
+flowchart TB
+    classDef runtime fill:#e8f0fe,stroke:#1a73e8,color:#000;
+    classDef gateway fill:#fef7e0,stroke:#f9ab00,color:#000;
+    classDef store fill:#fce8e6,stroke:#d93025,color:#000;
+    classDef sink fill:#e6f4ea,stroke:#188038,color:#000;
+    classDef adj fill:#f3e8fd,stroke:#9334e6,color:#000;
+
+    subgraph Azure["Azure"]
+        direction TB
+
+        AR["AKS agent runtime"]:::runtime
+
+        AR -- "tool request" --> TG["GATE tool gateway service"]:::gateway
+        AR -- "memory read/write" --> MG["GATE memory gateway service"]:::gateway
+
+        TG --> OPA["OPA policy engine"]:::gateway
+        MG --> QG["C18 quality gate"]:::gateway
+
+        TG -- "approved" --> Ent["Enterprise APIs in VNet"]:::store
+        QG --> Mem["Memory stores<br/>Cosmos DB + Blob + AI Search"]:::store
+
+        Ent --> AL["Audit ledger service"]:::sink
+        Mem --> AL
+        AL --> Blob["Blob immutability WORM"]:::sink
+        Blob --> RR["Replay recorder<br/>+ Blob trace store"]:::sink
+        RR --> OT["Azure Monitor + OpenTelemetry"]:::sink
+
+        Disc["C17 discovery<br/>Azure Policy + NSG Flow Logs +<br/>Tool Gateway ingress"]:::adj
+        Disc -. "enrol / terminate" .-> TG
+
+        Asr["C19 assurance plane<br/>baseline + drift detector +<br/>response router"]:::adj
+        OT -- "C13 stream" --> Asr
+    end
+```
+
+*Figure D.1 - Minimal deployment diagram (Azure). The GATE tool gateway and memory gateway services run on AKS. The Memory Gateway invokes the C18 quality gate before retrieval reaches Cosmos DB, Blob storage, or AI Search. The audit ledger writes to Blob immutability (WORM); the replay recorder writes to Blob; observability uses Azure Monitor and OpenTelemetry. C17 discovery uses Azure Policy, NSG Flow Logs, and Tool Gateway ingress. C19 consumes the C13 stream out of observability.*
 
 ### D2. Azure Bill of Materials (BoM)
 
@@ -4214,7 +4526,45 @@ HITL / Workflow (optional)
 
 ### E1. Minimal deployment diagram (GCP)
 
-![Figure E.1 - Minimal deployment diagram (GCP). The GATE tool gateway and memory gateway services run on GKE. The Memory Gateway invokes the C18 quality gate before retrieval reaches Firestore, GCS, or BigQuery. The audit ledger writes to GCS retention and immutability; the replay recorder writes to GCS; observability uses Cloud Logging, Monitoring, and OpenTelemetry. C17 discovery uses GCP Asset Inventory, VPC Flow Logs, and Tool Gateway ingress. C19 consumes the C13 stream out of observability.](../assets/images/figure-cloud-e-gcp.png){#fig-cloud-e width="48%"}
+```mermaid
+%% E1. Minimal deployment diagram (GCP) - v1.3
+%% Portrait layout. Replaces image4.png.
+flowchart TB
+    classDef runtime fill:#e8f0fe,stroke:#1a73e8,color:#000;
+    classDef gateway fill:#fef7e0,stroke:#f9ab00,color:#000;
+    classDef store fill:#fce8e6,stroke:#d93025,color:#000;
+    classDef sink fill:#e6f4ea,stroke:#188038,color:#000;
+    classDef adj fill:#f3e8fd,stroke:#9334e6,color:#000;
+
+    subgraph GCP["GCP"]
+        direction TB
+
+        AR["GKE agent runtime"]:::runtime
+
+        AR -- "tool request" --> TG["GATE tool gateway service"]:::gateway
+        AR -- "memory read/write" --> MG["GATE memory gateway service"]:::gateway
+
+        TG --> OPA["OPA policy engine"]:::gateway
+        MG --> QG["C18 quality gate"]:::gateway
+
+        TG -- "approved" --> Ent["Enterprise APIs in VPC"]:::store
+        QG --> Mem["Memory stores<br/>Firestore + GCS + BigQuery"]:::store
+
+        Ent --> AL["Audit ledger service"]:::sink
+        Mem --> AL
+        AL --> GCSR["GCS retention and immutability"]:::sink
+        GCSR --> RR["Replay recorder<br/>+ GCS trace store"]:::sink
+        RR --> OT["Cloud Logging + Monitoring +<br/>OpenTelemetry"]:::sink
+
+        Disc["C17 discovery<br/>GCP Asset Inventory + VPC Flow Logs +<br/>Tool Gateway ingress"]:::adj
+        Disc -. "enrol / terminate" .-> TG
+
+        Asr["C19 assurance plane<br/>baseline + drift detector +<br/>response router"]:::adj
+        OT -- "C13 stream" --> Asr
+    end
+```
+
+*Figure E.1 - Minimal deployment diagram (GCP). The GATE tool gateway and memory gateway services run on GKE. The Memory Gateway invokes the C18 quality gate before retrieval reaches Firestore, GCS, or BigQuery. The audit ledger writes to GCS retention and immutability; the replay recorder writes to GCS; observability uses Cloud Logging, Monitoring, and OpenTelemetry. C17 discovery uses GCP Asset Inventory, VPC Flow Logs, and Tool Gateway ingress. C19 consumes the C13 stream out of observability.*
 
 ### E2. GCP Bill of Materials (BoM)
 

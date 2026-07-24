@@ -1,0 +1,28 @@
+%% GATE Trust Pipeline (logical) - v1.3
+%% Tall portrait layout: two-column main flow with evidence stacked below.
+flowchart TB
+    classDef runtime fill:#e8f0fe,stroke:#1a73e8,color:#000;
+    classDef gateway fill:#fef7e0,stroke:#f9ab00,color:#000;
+    classDef store fill:#fce8e6,stroke:#d93025,color:#000;
+    classDef sink fill:#e6f4ea,stroke:#188038,color:#000;
+    classDef adj fill:#f3e8fd,stroke:#9334e6,color:#000;
+
+    AR["Agent runtime - LLM + SDK"]:::runtime
+
+    AR -- "tool request" --> TG["GATE Tool Gateway<br/>auth, policy, budget, signing"]:::gateway
+    AR -- "memory read/write" --> MG["GATE Memory Gateway<br/>ACL, TTL, provenance, poisoning"]:::gateway
+
+    TG -. "obligation" .-> HITL["HITL approval<br/>(optional gates)"]:::gateway
+    MG --> QG["C18 Quality Gate<br/>freshness, confidence, provenance"]:::gateway
+
+    TG -- "approved" --> Tools["Enterprise tools and APIs"]:::store
+    QG --> Mem["Memory stores<br/>vector and state"]:::store
+
+    Tools --> Ledger
+    Mem --> Ledger
+
+    Ledger["GATE audit ledger - hash chain to WORM"]:::sink
+    Ledger --> Replay["GATE replay recorder - traces and snapshots"]:::sink
+    Replay --> Obs["Observability pipeline - OpenTelemetry + C13 semantic traces"]:::sink
+    Obs --> ORM["ORM risk scoring - autonomy dial"]:::adj
+    ORM -. "posture feedback" .-> AR

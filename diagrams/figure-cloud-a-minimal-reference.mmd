@@ -1,0 +1,30 @@
+%% A. Minimal Reference Deployment (logical) - v1.3
+%% Portrait layout. Replaces image3.png (DARE Minimum).
+flowchart TB
+    classDef runtime fill:#e8f0fe,stroke:#1a73e8,color:#000;
+    classDef gateway fill:#fef7e0,stroke:#f9ab00,color:#000;
+    classDef store fill:#fce8e6,stroke:#d93025,color:#000;
+    classDef sink fill:#e6f4ea,stroke:#188038,color:#000;
+    classDef adj fill:#f3e8fd,stroke:#9334e6,color:#000;
+
+    AR["Agent runtime - LLM + SDK"]:::runtime
+
+    AR -- "tool request" --> TG["GATE tool gateway"]:::gateway
+    AR -- "memory read/write" --> MG["GATE memory gateway"]:::gateway
+
+    TG --> OPA["OPA policy engine"]:::gateway
+    MG --> QG["C18 quality gate"]:::gateway
+
+    TG -- "approved" --> Tools["Enterprise tools and APIs"]:::store
+    QG --> Mem["Memory stores - vector and state"]:::store
+
+    Tools --> Ledger["Audit ledger - hash chain to WORM"]:::sink
+    Mem --> Ledger
+    Ledger --> Replay["Replay recorder - traces and snapshots"]:::sink
+    Replay --> Obs["Observability - OpenTelemetry + C13 traces"]:::sink
+
+    Disc["C17 discovery service<br/>network + asset + identity"]:::adj
+    Disc -. "enrol / terminate" .-> TG
+
+    Asr["C19 assurance plane<br/>baseline + drift + response"]:::adj
+    Obs --> Asr

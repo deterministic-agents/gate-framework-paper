@@ -1,0 +1,63 @@
+%% Threat ingress paths and GATE enforcement boundaries - v1.3
+%% Updated for v1.3:
+%%   - New threat path: Ungoverned agents (shadow AI)
+%%   - C17 Discovery surface added as the new enforcement boundary for that path
+%%   - Memory boundary annotation now includes C18 quality
+flowchart TB
+    classDef threat fill:#fce8e6,stroke:#d93025,color:#000;
+    classDef ingress fill:#fef7e0,stroke:#f9ab00,color:#000;
+    classDef runtime fill:#e8f0fe,stroke:#1a73e8,color:#000;
+    classDef enforce fill:#e6f4ea,stroke:#188038,color:#000;
+    classDef sink fill:#f8f9fa,stroke:#5f6368,color:#000;
+    classDef new fill:#f3e8fd,stroke:#9334e6,color:#000;
+
+    User["User /<br/>Attacker"]:::threat
+    Ext["External Content<br/>Web, PDFs, email, tickets"]:::threat
+    ExtT["External Tools / APIs"]:::threat
+    Other["Other Agents"]:::threat
+    Shadow["Ungoverned agents<br/>(shadow AI, SaaS-embedded,<br/>untracked workloads)"]:::threat
+
+    Direct["Direct Prompt Injection"]:::ingress
+    Retr["Retrieval /<br/>Context Assembly"]:::ingress
+    ToolOut["Tool Outputs"]:::ingress
+    Cross["Cross-agent Manipulation"]:::ingress
+
+    AR["Agent Runtime"]:::runtime
+    Orc["Orchestrator<br/>routing + retries + backpressure"]:::runtime
+
+    TG["Tool Gateway<br/>schema + policy + budgets"]:::enforce
+    MG["Memory Gateway<br/>ACL + provenance + TTL<br/>+ C18 quality gates"]:::enforce
+    Disc["C17 Discovery<br/>network + asset + identity"]:::new
+
+    MemStore["Memory Store<br/>RAG / state"]:::sink
+    Tools["Tools / Side Effects"]:::sink
+    AL["Verifiable Audit Ledger"]:::sink
+    Rep["Replay Trace + Snapshots"]:::sink
+    CB["Circuit Breakers /<br/>Kill Switch"]:::sink
+    MP["Memory Poisoning detection"]:::sink
+
+    User --> Direct
+    Ext --> Retr
+    ExtT --> ToolOut
+    Other --> Cross
+    Shadow -- "untracked tool calls" --> Disc
+
+    Direct --> AR
+    Retr --> AR
+    ToolOut --> AR
+    Cross --> AR
+
+    AR -- "proposes tool call" --> Orc
+    AR -- "reads / writes" --> MG
+    Orc --> TG
+
+    Disc -. "enrol or terminate" .-> TG
+    Disc -. "discovered events" .-> AL
+
+    TG --> Tools
+    TG --> AL
+    TG --> Rep
+    TG --> CB
+
+    MG --> MemStore
+    MG --> MP

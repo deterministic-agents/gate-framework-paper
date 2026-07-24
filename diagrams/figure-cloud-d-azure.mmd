@@ -1,0 +1,35 @@
+%% D1. Minimal deployment diagram (Azure) - v1.3
+%% Portrait layout. Replaces image6.png.
+flowchart TB
+    classDef runtime fill:#e8f0fe,stroke:#1a73e8,color:#000;
+    classDef gateway fill:#fef7e0,stroke:#f9ab00,color:#000;
+    classDef store fill:#fce8e6,stroke:#d93025,color:#000;
+    classDef sink fill:#e6f4ea,stroke:#188038,color:#000;
+    classDef adj fill:#f3e8fd,stroke:#9334e6,color:#000;
+
+    subgraph Azure["Azure"]
+        direction TB
+
+        AR["AKS agent runtime"]:::runtime
+
+        AR -- "tool request" --> TG["GATE tool gateway service"]:::gateway
+        AR -- "memory read/write" --> MG["GATE memory gateway service"]:::gateway
+
+        TG --> OPA["OPA policy engine"]:::gateway
+        MG --> QG["C18 quality gate"]:::gateway
+
+        TG -- "approved" --> Ent["Enterprise APIs in VNet"]:::store
+        QG --> Mem["Memory stores<br/>Cosmos DB + Blob + AI Search"]:::store
+
+        Ent --> AL["Audit ledger service"]:::sink
+        Mem --> AL
+        AL --> Blob["Blob immutability WORM"]:::sink
+        Blob --> RR["Replay recorder<br/>+ Blob trace store"]:::sink
+        RR --> OT["Azure Monitor + OpenTelemetry"]:::sink
+
+        Disc["C17 discovery<br/>Azure Policy + NSG Flow Logs +<br/>Tool Gateway ingress"]:::adj
+        Disc -. "enrol / terminate" .-> TG
+
+        Asr["C19 assurance plane<br/>baseline + drift detector +<br/>response router"]:::adj
+        OT -- "C13 stream" --> Asr
+    end

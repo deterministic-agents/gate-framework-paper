@@ -1,0 +1,35 @@
+%% C1. Minimal deployment diagram (AWS) - v1.3
+%% Portrait layout. Replaces image5.png.
+flowchart TB
+    classDef runtime fill:#e8f0fe,stroke:#1a73e8,color:#000;
+    classDef gateway fill:#fef7e0,stroke:#f9ab00,color:#000;
+    classDef store fill:#fce8e6,stroke:#d93025,color:#000;
+    classDef sink fill:#e6f4ea,stroke:#188038,color:#000;
+    classDef adj fill:#f3e8fd,stroke:#9334e6,color:#000;
+
+    subgraph AWS["AWS"]
+        direction TB
+
+        AR["EKS or ECS agent runtime"]:::runtime
+
+        AR -- "tool request" --> TG["GATE tool gateway service"]:::gateway
+        AR -- "memory read/write" --> MG["GATE memory gateway service"]:::gateway
+
+        TG --> OPA["OPA policy engine"]:::gateway
+        MG --> QG["C18 quality gate"]:::gateway
+
+        TG -- "approved" --> Ent["Enterprise APIs in VPC"]:::store
+        QG --> Mem["Memory stores<br/>DynamoDB + S3 + OpenSearch"]:::store
+
+        Ent --> AL["Audit ledger service"]:::sink
+        Mem --> AL
+        AL --> S3W["S3 Object Lock WORM"]:::sink
+        S3W --> RR["Replay recorder<br/>+ S3 trace store"]:::sink
+        RR --> OT["CloudWatch + OpenTelemetry"]:::sink
+
+        Disc["C17 discovery<br/>AWS Config + VPC Flow Logs +<br/>Tool Gateway ingress"]:::adj
+        Disc -. "enrol / terminate" .-> TG
+
+        Asr["C19 assurance plane<br/>baseline + drift detector +<br/>response router"]:::adj
+        OT -- "C13 stream" --> Asr
+    end

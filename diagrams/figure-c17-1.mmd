@@ -1,0 +1,27 @@
+%% C17 Agent Discovery and Shadow AI Detection - flow diagram (new in v1.3)
+%% Portrait layout: linear chain top-to-bottom.
+flowchart TB
+    classDef detect fill:#fef7e0,stroke:#f9ab00,color:#000;
+    classDef plane fill:#f3e8fd,stroke:#9334e6,color:#000;
+    classDef gate fill:#e6f4ea,stroke:#188038,color:#000;
+    classDef sink fill:#e8f0fe,stroke:#1a73e8,color:#000;
+    classDef bad fill:#fce8e6,stroke:#d93025,color:#000;
+
+    Shadow["Unenrolled workloads<br/>calling LLM endpoints or<br/>registered tools"]:::bad
+
+    Shadow --> Net["Network detector<br/>VPC / NSG flow logs<br/>+ Tool Gateway ingress"]:::detect
+    Net --> Asset["Asset inventory integrator<br/>AWS Config / Azure Policy /<br/>GCP Asset Inventory"]:::detect
+    Asset --> IDcls["Workload identity classifier<br/>tool stream vs C04 inventory"]:::detect
+
+    IDcls --> Class["C17 classifier engine<br/>(signed classifier_bundle_hash)"]:::plane
+    Class --> Cand["Candidate store"]:::plane
+
+    Cand --> Ledger["GATE audit ledger<br/>agent.discovered<br/>agent.remediation_outcome"]:::sink
+
+    Cand --> C04["C04 lifecycle service<br/>state machine + Commission tickets"]:::gate
+
+    C04 -- "enrol path" --> AR["Agent runtimes<br/>(C04 commissioned)"]:::sink
+    C04 -- "terminate:<br/>IdP revoke + Tool Gateway deny + egress block" --> Shadow
+    C04 -. "exception (TTL)" .-> Cand
+
+    AR -. "baseline reference" .-> IDcls
