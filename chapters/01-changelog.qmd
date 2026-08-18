@@ -2,7 +2,7 @@
 
 ## Changes since v1.3
 
-Released: 2026-07-18\
+Released: 2026-08-18\
 Previous version: v1.3
 
 The largest release since the initial publication. Adds one control (C20), tightens four existing controls (C09, C17, C18, plus a normative note in C19), adds three standards mappings (AISVS, ATLAS, SSDF), and introduces two new repositories (gate-rust as a high-throughput Tool Gateway companion, gate-fuzz as a property-based testing suite) and a knowledge bundle (gate-knowledge in OKF v0.1 format).
