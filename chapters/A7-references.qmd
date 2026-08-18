@@ -6,7 +6,7 @@ Google Cloud (2026) 'How the Open Knowledge Format can improve data sharing'. *G
 
 International Organization for Standardization (2023) *ISO/IEC 42001: Information technology - Artificial intelligence - Management system*. ISO/IEC.
 
-MITRE (2026) *MITRE ATLAS (Adversarial Threat Landscape for Artificial-Intelligence Systems)*. Available at: https://atlas.mitre.org/ (Accessed: 23 June 2026). Content version 2026.05, data format version 6.0.0.
+MITRE (2026) *MITRE ATLAS (Adversarial Threat Landscape for Artificial-Intelligence Systems)*. Available at: https://atlas.mitre.org/ (Accessed: 23 June 2026). Content version 2026.05, data format version 5.6.0.
 
 National Institute of Standards and Technology (2022) *NIST Special Publication 800-218: Secure Software Development Framework (SSDF) Version 1.1*. National Institute of Standards and Technology.
 

@@ -58,7 +58,7 @@ The largest release since the initial publication. Adds one control (C20), tight
 ### Added
 
 - **C20 Agent-to-Human Output Validation** (Layer 3). Per-response classification at the delivery boundary, with sensitivity tier, regulated category, confidence score, and configurable obligations (`redact_fields`, `hitl_review`, `hold_for_review`). Fail-closed default at high_privilege tier enforced by bundle-schema and policy guardrail. Streaming output disabled at high_privilege for any agent whose action matrix can produce a hold or review obligation (constraint applies in v1.4 only; streaming-aware classification arrives in v1.5).
-- **AISVS, ATLAS, SSDF mappings** in the Standard Mappings appendix. Pinned to AISVS v1.0 at commit `aadf83a77b44cc5c6ee3033affe0d8c538dc3748`, ATLAS content `2026.05` / data format `6.0.0`, and SSDF SP 800-218 v1.1.
+- **AISVS, ATLAS, SSDF mappings** in the Standard Mappings appendix. Pinned to AISVS v1.0 at commit `aadf83a77b44cc5c6ee3033affe0d8c538dc3748`, ATLAS content `2026.05` / data format `5.6.0`, and SSDF SP 800-218 v1.1.
 - **`break_glass_record` contract** in gate-contracts v1.2.0. A signed artifact carrying `record_id`, `invariant_halt_event_id`, `invariant_rule_id`, dual `approver_ids`, `justification`, `exception_scope`, `exception_expires_at`, and signatures. Closes the audit gap where v1.3 break-glass events could not be programmatically tied to the authorisation that permitted the override.
 - **C17 automated enrolment fast-path** as a subsection within C17. Candidates meeting all classification criteria above a per-workload-class confidence threshold AND with resolvable asset tags AND in the approved workload class list are automatically enrolled without human Commission review. Configuration shape (`auto_enrolment_policy`) is normative in gate-contracts v1.2.0.
 - **C18 provenance chain extension**. Provenance MUST chain back to a registered source: a data source in the C04 source registry or a verified external feed in the approved feed registry. A well-formed provenance record pointing to an unregistered source fails C18 at high_privilege tier.
@@ -4747,7 +4747,7 @@ Google Cloud (2026) 'How the Open Knowledge Format can improve data sharing'. *G
 
 International Organization for Standardization (2023) *ISO/IEC 42001: Information technology - Artificial intelligence - Management system*. ISO/IEC.
 
-MITRE (2026) *MITRE ATLAS (Adversarial Threat Landscape for Artificial-Intelligence Systems)*. Available at: https://atlas.mitre.org/ (Accessed: 23 June 2026). Content version 2026.05, data format version 6.0.0.
+MITRE (2026) *MITRE ATLAS (Adversarial Threat Landscape for Artificial-Intelligence Systems)*. Available at: https://atlas.mitre.org/ (Accessed: 23 June 2026). Content version 2026.05, data format version 5.6.0.
 
 National Institute of Standards and Technology (2022) *NIST Special Publication 800-218: Secure Software Development Framework (SSDF) Version 1.1*. National Institute of Standards and Technology.
 
