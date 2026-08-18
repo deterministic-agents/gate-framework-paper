@@ -45,7 +45,8 @@ blockquote { margin: 6pt 0 6pt 12pt; padding-left: 8pt; border-left: 2pt solid #
 .fig-wide { max-width: 100%; max-height: 210mm; }
 .fig-narrow { max-width: 72%; max-height: 215mm; }
 .caption { font-size: 8.5pt; font-style: italic; color: #444; margin-top: 4pt; text-align: left; }
-.hero { text-align: center; margin: 40mm 0 8mm; }
+.hero { text-align: center; margin: 55mm 0 12mm; }
+.pagebreak { page-break-after: always; }
 .hero img { max-width: 60%; }
 a { color: #1a4d8f; text-decoration: none; }
 '''
@@ -74,6 +75,10 @@ def build_pdf(out_path: Path) -> None:
     doc = fence.sub(sub, doc)
     body = markdown.markdown(doc, extensions=['tables', 'fenced_code', 'sane_lists'])
     body = body.replace('<h1>', '<h1 class="first">', 1)
+    # title page carries only the hero, title, and subtitle; the version,
+    # licensing, and disclaimer front matter starts on page 2
+    body = re.sub(r'(<h1 class="first">.*?</h1>\s*<p><em>.*?</em></p>)',
+                  r'\1<div class="pagebreak"></div>', body, count=1, flags=re.S)
     html = (f'<!DOCTYPE html><html><head><meta charset="utf-8"><style>{CSS}</style></head>'
             f'<body><div class="hero"><img src="data:image/png;base64,{b64_png("hero")}"></div>'
             f'{body}</body></html>')
