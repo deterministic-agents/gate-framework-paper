@@ -1,12 +1,11 @@
-# Governed Agent Trust Environment {.unnumbered}
-
+# Governed Agent Trust Environment
 *A Cloud Reference Framework of Controls for Enterprise-Grade Trustworthy AI Agents*
 
 Version: 1.4
 
 Copyright © 2026 Andrew Stevens.
 
-License (Documentation): Creative Commons Attribution 4.0 International (CC BY 4.0)\
+License (Documentation): Creative Commons Attribution 4.0 International (CC BY 4.0)  
 This work is licensed under the Creative Commons Attribution 4.0 International License. You may copy, redistribute, remix, transform, and build upon this material for any purpose, including commercial use, provided that you give appropriate credit, include a reference to the license, and indicate if changes were made.
 
 Required attribution (minimum):
@@ -19,10 +18,10 @@ Required attribution (minimum):
 >
 > License: CC BY 4.0
 
-No endorsement:\
+No endorsement:  
 Attribution must not suggest the author endorses you, your organization, or your use of this work.
 
-Disclaimer:\
+Disclaimer:  
 This document is provided "as is" without warranties of any kind. Implementers are responsible for validating security, compliance, and suitability for their environment and applicable requirements.
 
 # Licensing & Use
@@ -37,7 +36,7 @@ License: [https://creativecommons.org/licenses/by/4.0/](https://creativecommons.
 
 **Recommended attribution**
 
-"Governed Agent Trust Environment (GATE)" by Andrew Stevens, licensed under CC BY 4.0.\
+"Governed Agent Trust Environment (GATE)" by Andrew Stevens, licensed under CC BY 4.0.  
 Source: deterministicagents.ai/gate
 
 **No endorsement**
@@ -48,11 +47,10 @@ Attribution must not suggest the author endorses you, your organization, or your
 
 This framework provides architectural and engineering guidance only. It does not constitute legal advice and does not guarantee security or compliance. Implementers are responsible for validating controls, evidence retention, and risk thresholds for their environment, threat model, and applicable regulatory or contractual requirements.
 
-# Changelog {#sec-changelog}
-
+# Changelog
 ## Changes since v1.3
 
-Released: 2026-07-04\
+Released: 2026-07-18  
 Previous version: v1.3
 
 The largest release since the initial publication. Adds one control (C20), tightens four existing controls (C09, C17, C18, plus a normative note in C19), adds three standards mappings (AISVS, ATLAS, SSDF), and introduces two new repositories (gate-rust as a high-throughput Tool Gateway companion, gate-fuzz as a property-based testing suite) and a knowledge bundle (gate-knowledge in OKF v0.1 format).
@@ -489,28 +487,28 @@ In a GATE deployment, the model runtime is not trusted as an enforcement boundar
 
 Adversarial influence can enter through:
 
-1.  User prompts (direct injection)\
+1.  User prompts (direct injection)  
     Attackers attempt to override system intent, request privileged actions, or coerce disclosure.
 
-2.  Retrieved content (indirect injection)\
+2.  Retrieved content (indirect injection)  
     Malicious instructions embedded in web pages, PDFs, tickets, emails, or docs are pulled into context and treated as authoritative.
 
-3.  Tool outputs (untrusted responses)\
+3.  Tool outputs (untrusted responses)  
     External systems and APIs can return payloads that contain injection patterns, misleading data, or crafted content that steers subsequent actions.
 
-4.  Memory poisoning (persistence attacks)\
+4.  Memory poisoning (persistence attacks)  
     Long-lived context stores (RAG indexes, vector DBs, state stores) are polluted to bias future decisions-often invisibly and at scale.
 
-5.  Cross-agent manipulation\
+5.  Cross-agent manipulation  
     In multi-agent systems, one compromised or misaligned agent can influence others through delegation, message passing, or shared state.
 
-6.  Confused deputy attacks\
+6.  Confused deputy attacks  
     The agent holds legitimate privileges; the attacker manipulates it into using those privileges for unintended outcomes (e.g., exporting data "for debugging," granting access "temporarily," changing configs "to fix an error").
 
-7.  Extraction / probing\
+7.  Extraction / probing  
     Attackers attempt to infer sensitive data from responses, learn internal policies, replicate behavior, or discover tool surfaces via iterative probing.
 
-8.  Runaway execution / cost and operational damage\
+8.  Runaway execution / cost and operational damage  
     Attackers (or simple failures) trigger loops, recursion, high-frequency tool calls, or pathological retrieval patterns that cause spend spikes or service disruption.
 
 ## Adversary assumptions (baseline)
@@ -533,29 +531,29 @@ GATE does not require assuming the adversary has direct administrative control o
 
 ## Representative attack scenarios
 
-**Scenario A - Indirect injection → privileged action**\
-A malicious PDF contains "instructions" that direct the agent to export data "for verification." The agent obeys.\
-Failure mode: tool call executed without deterministic constraints.\
+**Scenario A - Indirect injection → privileged action**  
+A malicious PDF contains "instructions" that direct the agent to export data "for verification." The agent obeys.  
+Failure mode: tool call executed without deterministic constraints.  
 GATE objective: enforce allow/deny + invariants + HITL obligations at tool boundary.
 
-**Scenario B - Confused deputy via legitimate privileges**\
-An attacker convinces the agent that rotating secrets requires temporarily widening IAM permissions.\
-Failure mode: agent uses legitimate privileges for an unintended escalation.\
+**Scenario B - Confused deputy via legitimate privileges**  
+An attacker convinces the agent that rotating secrets requires temporarily widening IAM permissions.  
+Failure mode: agent uses legitimate privileges for an unintended escalation.  
 GATE objective: tool category gating + invariant checks + non-repudiation + approvals for privilege-affecting actions.
 
-**Scenario C - Memory poisoning persistence**\
-A malicious internal ticket gets indexed and becomes a persistent "source of truth," shaping future actions.\
-Failure mode: long-lived corrupted state causes repeated unsafe behaviors.\
+**Scenario C - Memory poisoning persistence**  
+A malicious internal ticket gets indexed and becomes a persistent "source of truth," shaping future actions.  
+Failure mode: long-lived corrupted state causes repeated unsafe behaviors.  
 GATE objective: provenance checks, schema/ACL at read time, quarantine, and auditability of memory writes.
 
-**Scenario D - Tool output injection**\
-An external API returns a response containing prompt-injection instructions; the agent treats it as system guidance.\
-Failure mode: untrusted tool output becomes executable instruction.\
+**Scenario D - Tool output injection**  
+An external API returns a response containing prompt-injection instructions; the agent treats it as system guidance.  
+Failure mode: untrusted tool output becomes executable instruction.  
 GATE objective: strict separation of instruction channels, normalization, and deterministic policy enforcement.
 
-**Scenario E - Runaway loops and spend**\
-An attacker induces repeated "verification" steps, causing infinite retries and escalating cost.\
-Failure mode: unbounded recursion and tool call storms.\
+**Scenario E - Runaway loops and spend**  
+An attacker induces repeated "verification" steps, causing infinite retries and escalating cost.  
+Failure mode: unbounded recursion and tool call storms.  
 GATE objective: budgets, concurrency limits, breaker thresholds, and stop mechanisms.
 
 ## Security objectives
@@ -690,7 +688,7 @@ The agent runtime emits a tool request to GATE tool gateway (auth, policy, budge
 
 - authorized requests proceed to enterprise tools and APIs, and
 
-- evidence is emitted to GATE audit ledger (hash chained events to immutable sink) and GATE replay recorder (traces and snapshots), and telemetry is emitted to the observability pipeline (OpenTelemetry and semantic traces).\
+- evidence is emitted to GATE audit ledger (hash chained events to immutable sink) and GATE replay recorder (traces and snapshots), and telemetry is emitted to the observability pipeline (OpenTelemetry and semantic traces).  
   Where policy requires, the tool gateway uses the HITL approval service (optional gates) to hold or gate execution; the approval outcome is recorded as evidence and correlated to the originating request.
 
 **Memory flow (governed persistence)**
@@ -703,8 +701,8 @@ The Memory Gateway is an access-control and provenance boundary, not a data-qual
 
 This is a deliberate scope boundary. GATE is a control plane framework, not a data quality platform. Data quality belongs upstream in the pipelines that produce stored content. However, the retrieval boundary is the last point at which the control plane can apply minimum quality gates before content reaches the model. C18 (Data Quality Gates) defines those gates: freshness checks against a configurable TTL, confidence thresholds, and provenance-required flags. Organisations operating without C18 should document this scope gap explicitly in their conformance self-assessment and route data quality assurance to a named upstream process.
 
-**Risk feedback flow (autonomy dial)**\
-\
+**Risk feedback flow (autonomy dial)**  
+  
 The observability pipeline provides signals to ORM risk scoring (autonomy dial). ORM outputs are used to influence enforcement posture (e.g., tightening thresholds, enabling gates, adjusting budgets) as defined by policy and operational runbooks.
 
 In the following diagram, the tool gateway and memory gateway are the only sanctioned egress points from the agent runtime; all evidence and risk signals are downstream of these enforcement points. Figure RA.1 shows the main runtime path. The C17 Discovery plane (Figure 17.1) and the C19 Assurance plane (Figure 19.1) operate alongside this path; they are described in their respective control sections.
@@ -1039,9 +1037,9 @@ A control's Why MUST include the following:
 
 ### Template (normative)
 
-Why:\
-Without this control, an agent can \<failure mode\> via \<attack path\>, resulting in \<impact\>.\
-Prompt-based constraints and conventional application logging fail because \<reason\>.\
+Why:  
+Without this control, an agent can \<failure mode\> via \<attack path\>, resulting in \<impact\>.  
+Prompt-based constraints and conventional application logging fail because \<reason\>.  
 This control reduces risk by enforcing \<deterministic condition\> at the \<boundary\>.
 
 #### Examples (conformant)
@@ -1076,9 +1074,9 @@ A control's What MUST describe an enforceable mechanism:
 
 ### Template (normative)
 
-What:\
-This control is implemented as \<service/mechanism\> at the \<boundary\>.\
-It consumes \<inputs\> and enforces \<invariants\> by producing \<decisions/actions\>.\
+What:  
+This control is implemented as \<service/mechanism\> at the \<boundary\>.  
+It consumes \<inputs\> and enforces \<invariants\> by producing \<decisions/actions\>.  
 It emits \<outputs\> that are linked to \<correlation IDs\> for audit and replay.
 
 ### Required invariants (recommended baseline; tiered requirement)
@@ -1113,7 +1111,7 @@ A control's How MUST answer:
 
 Write How in four subsections:
 
-1.  Control-plane flow (mandatory)\
+1.  Control-plane flow (mandatory)  
     Describe the enforcement sequence (for tools and/or memory as applicable):
 
 - Authenticate workload identity
@@ -1156,10 +1154,10 @@ Write How in four subsections:
 
 ### Template (normative)
 
-How:\
-Flow: \<list the enforcement steps at runtime\>.\
-Deployment: \<where it runs, how it intercepts\>.\
-Rollout: \<safe introduction strategy\>.\
+How:  
+Flow: \<list the enforcement steps at runtime\>.  
+Deployment: \<where it runs, how it intercepts\>.  
+Rollout: \<safe introduction strategy\>.  
 Testing: \<how to prove it works and remains working\>.
 
 ## EVIDENCE: Specify audit artifacts, retention, and correlation
@@ -1194,9 +1192,9 @@ For any action that can cause side effects, the evidence set SHOULD include:
 
 #### Template (normative)
 
-Evidence:\
-Emit \<events\> with \<IDs\> and cryptographic linkage (\<hashes/signatures\>).\
-Store in \<immutable sink\> for \<retention period/profile\>.\
+Evidence:  
+Emit \<events\> with \<IDs\> and cryptographic linkage (\<hashes/signatures\>).  
+Store in \<immutable sink\> for \<retention period/profile\>.  
 Provide \<integrity verification\> and \<dashboards/queries\> to support incident response and audits.
 
 ## FAILURE MODES: Document the foot-guns and bypasses
@@ -1217,11 +1215,11 @@ Failure modes MUST be written as specific, observable weaknesses:
 
 ### Template (normative)
 
-Failure Modes:\
-Bypass: \<how the control is bypassed\>.\
-Mis-scope: \<permissions too wide / wrong boundary\>.\
-Non-enforcement: \<observe-only left enabled / obligations ignored\>.\
-Evidence gaps: \<missing linkage or retention\>.\
+Failure Modes:  
+Bypass: \<how the control is bypassed\>.  
+Mis-scope: \<permissions too wide / wrong boundary\>.  
+Non-enforcement: \<observe-only left enabled / obligations ignored\>.  
+Evidence gaps: \<missing linkage or retention\>.  
 Operational drift: \<versioning and rollout failures\>.
 
 ### Example failure modes (common)
@@ -1315,67 +1313,67 @@ All hashes and signatures MUST be computed over canonical JSON (stable ordering 
 **ToolRequestEnvelope (JSON)**
 
   ---------------------------------------------------------------------------
-  {\
-  \"schema_version\": \"v1\",\
-  \"event_type\": \"gate.tool.request\",\
-  \"time\": \"2025-12-24T10:20:00Z\",\
-  \
-  \"run_id\": \"uuid\",\
-  \"trace_id\": \"otel-trace-id\",\
-  \"span_id\": \"otel-span-id\",\
-  \"tenant_id\": \"tenant-123\",\
-  \"environment\": \"prod\",\
-  \
-  \"agent\": {\
-  \"agent_instance_id\": \"spiffe://org/agent/planner#run-123\",\
-  \"agent_name\": \"planner\",\
-  \"agent_version\": \"2.1.0\",\
-  \"identity\": {\
-  \"subject\": \"spiffe://org/agent/planner\",\
-  \"attested\": true,\
-  \"claims\": {\
-  \"image_digest\": \"sha256:\...\",\
-  \"config_hash\": \"sha256:\...\",\
-  \"toolset_hash\": \"sha256:\...\"\
-  }\
-  }\
-  },\
-  \
-  \"tool\": {\
-  \"name\": \"crm.update_contact\",\
-  \"category\": \"reversible_write\",\
-  \"risk_tier\": \"medium\",\
-  \"idempotency_key\": \"optional-stable-key\"\
-  },\
-  \
-  \"inputs\": {\
-  \"content_type\": \"application/json\",\
-  \"payload\": { \"contact_id\": \"123\", \"email\": \"new@example.com\" }\
-  },\
-  \
-  \"bundles\": {\
-  \"policy_bundle_hash\": \"sha256:\...\",\
-  \"prompt_bundle_hash\": \"sha256:\...\",\
-  \"tool_schema_hash\": \"sha256:\...\"\
-  },\
-  \
-  \"hashes\": {\
-  \"request_hash\": \"sha256:\...\"\
-  },\
-  \
-  \"context\": {\
-  \"orm_risk_score\": 0.42,\
-  \"budgets\": {\
-  \"tokens_remaining\": 20000,\
-  \"tool_calls_remaining\": 120,\
-  \"cost_usd_remaining\": 18.50\
-  },\
-  \"source_labels\": \[\"user_input\", \"retrieved_doc\"\],\
-  \"approval\": {\
-  \"required\": false,\
-  \"approval_id\": null\
-  }\
-  }\
+  {  
+  \"schema_version\": \"v1\",  
+  \"event_type\": \"gate.tool.request\",  
+  \"time\": \"2025-12-24T10:20:00Z\",  
+    
+  \"run_id\": \"uuid\",  
+  \"trace_id\": \"otel-trace-id\",  
+  \"span_id\": \"otel-span-id\",  
+  \"tenant_id\": \"tenant-123\",  
+  \"environment\": \"prod\",  
+    
+  \"agent\": {  
+  \"agent_instance_id\": \"spiffe://org/agent/planner#run-123\",  
+  \"agent_name\": \"planner\",  
+  \"agent_version\": \"2.1.0\",  
+  \"identity\": {  
+  \"subject\": \"spiffe://org/agent/planner\",  
+  \"attested\": true,  
+  \"claims\": {  
+  \"image_digest\": \"sha256:\...\",  
+  \"config_hash\": \"sha256:\...\",  
+  \"toolset_hash\": \"sha256:\...\"  
+  }  
+  }  
+  },  
+    
+  \"tool\": {  
+  \"name\": \"crm.update_contact\",  
+  \"category\": \"reversible_write\",  
+  \"risk_tier\": \"medium\",  
+  \"idempotency_key\": \"optional-stable-key\"  
+  },  
+    
+  \"inputs\": {  
+  \"content_type\": \"application/json\",  
+  \"payload\": { \"contact_id\": \"123\", \"email\": \"new@example.com\" }  
+  },  
+    
+  \"bundles\": {  
+  \"policy_bundle_hash\": \"sha256:\...\",  
+  \"prompt_bundle_hash\": \"sha256:\...\",  
+  \"tool_schema_hash\": \"sha256:\...\"  
+  },  
+    
+  \"hashes\": {  
+  \"request_hash\": \"sha256:\...\"  
+  },  
+    
+  \"context\": {  
+  \"orm_risk_score\": 0.42,  
+  \"budgets\": {  
+  \"tokens_remaining\": 20000,  
+  \"tool_calls_remaining\": 120,  
+  \"cost_usd_remaining\": 18.50  
+  },  
+  \"source_labels\": \[\"user_input\", \"retrieved_doc\"\],  
+  \"approval\": {  
+  \"required\": false,  
+  \"approval_id\": null  
+  }  
+  }  
   }
   ---------------------------------------------------------------------------
 
@@ -1384,44 +1382,44 @@ All hashes and signatures MUST be computed over canonical JSON (stable ordering 
 **ToolResponseEnvelope (JSON)**
 
   ----------------------------------------------------------------------------
-  {\
-  \"schema_version\": \"v1\",\
-  \"event_type\": \"gate.tool.response\",\
-  \"time\": \"2025-12-24T10:20:01Z\",\
-  \
-  \"run_id\": \"uuid\",\
-  \"trace_id\": \"otel-trace-id\",\
-  \"span_id\": \"otel-span-id\",\
-  \"tenant_id\": \"tenant-123\",\
-  \"environment\": \"prod\",\
-  \
-  \"tool\": {\
-  \"name\": \"crm.update_contact\",\
-  \"status\": \"success\",\
-  \"duration_ms\": 312\
-  },\
-  \
-  \"outputs\": {\
-  \"content_type\": \"application/json\",\
-  \"payload_redacted\": { \"updated\": true },\
-  \"snapshot_uri\": \"immutable://snapshots/tool/crm.update_contact/\....\"\
-  },\
-  \
-  \"hashes\": {\
-  \"response_hash\": \"sha256:\...\"\
-  },\
-  \
-  \"policy\": {\
-  \"decision_id\": \"uuid\",\
-  \"decision\": \"allow\",\
-  \"obligations\": \[\"log\", \"sign_action\"\],\
-  \"policy_bundle_hash\": \"sha256:\...\"\
-  },\
-  \
-  \"evidence\": {\
-  \"ledger_event_id\": \"ledger-evt-\...\",\
-  \"replay_trace_step_id\": \"trace-step-\...\"\
-  }\
+  {  
+  \"schema_version\": \"v1\",  
+  \"event_type\": \"gate.tool.response\",  
+  \"time\": \"2025-12-24T10:20:01Z\",  
+    
+  \"run_id\": \"uuid\",  
+  \"trace_id\": \"otel-trace-id\",  
+  \"span_id\": \"otel-span-id\",  
+  \"tenant_id\": \"tenant-123\",  
+  \"environment\": \"prod\",  
+    
+  \"tool\": {  
+  \"name\": \"crm.update_contact\",  
+  \"status\": \"success\",  
+  \"duration_ms\": 312  
+  },  
+    
+  \"outputs\": {  
+  \"content_type\": \"application/json\",  
+  \"payload_redacted\": { \"updated\": true },  
+  \"snapshot_uri\": \"immutable://snapshots/tool/crm.update_contact/\....\"  
+  },  
+    
+  \"hashes\": {  
+  \"response_hash\": \"sha256:\...\"  
+  },  
+    
+  \"policy\": {  
+  \"decision_id\": \"uuid\",  
+  \"decision\": \"allow\",  
+  \"obligations\": \[\"log\", \"sign_action\"\],  
+  \"policy_bundle_hash\": \"sha256:\...\"  
+  },  
+    
+  \"evidence\": {  
+  \"ledger_event_id\": \"ledger-evt-\...\",  
+  \"replay_trace_step_id\": \"trace-step-\...\"  
+  }  
   }
   ----------------------------------------------------------------------------
 
@@ -1454,49 +1452,49 @@ This is the must-have record that makes tool execution defensible.
 **PolicyDecisionRecord (JSON)**
 
   --------------------------------------------------------------------
-  {\
-  \"schema_version\": \"v1\",\
-  \"event_type\": \"gate.policy.decision\",\
-  \"time\": \"2025-12-24T10:20:00Z\",\
-  \
-  \"decision_id\": \"uuid\",\
-  \"run_id\": \"uuid\",\
-  \"trace_id\": \"otel-trace-id\",\
-  \"tenant_id\": \"tenant-123\",\
-  \"environment\": \"prod\", \"control_plane_version\": \"v1.3\",\
-  \
-  \"subject\": {\
-  \"agent_instance_id\": \"spiffe://org/agent/planner#run-123\",\
-  \"subject_id\": \"spiffe://org/agent/planner\",\
-  \"attested\": true\
-  },\
-  \
-  \"action\": {\
-  \"type\": \"tool.invoke\",\
-  \"tool_name\": \"crm.update_contact\",\
-  \"tool_category\": \"reversible_write\",\
-  \"risk_tier\": \"medium\"\
-  },\
-  \
-  \"inputs\": {\
-  \"request_hash\": \"sha256:\...\",\
-  \"context_hash\": \"sha256:\...\"\
-  },\
-  \
-  \"bundles\": {\
-  \"policy_bundle_hash\": \"sha256:\...\",\
-  \"tool_schema_hash\": \"sha256:\...\"\
-  },\
-  \
-  \"result\": {\
-  \"decision\": \"allow\",\
-  \"reason_codes\": \[\"ALLOWLIST_MATCH\", \"BUDGET_OK\"\],\
-  \"obligations\": \[\
-  { \"type\": \"audit_log\", \"required\": true },\
-  { \"type\": \"sign_action\", \"required\": true },\
-  { \"type\": \"hitl_approval\", \"required\": false }\
-  \]\
-  }\
+  {  
+  \"schema_version\": \"v1\",  
+  \"event_type\": \"gate.policy.decision\",  
+  \"time\": \"2025-12-24T10:20:00Z\",  
+    
+  \"decision_id\": \"uuid\",  
+  \"run_id\": \"uuid\",  
+  \"trace_id\": \"otel-trace-id\",  
+  \"tenant_id\": \"tenant-123\",  
+  \"environment\": \"prod\", \"control_plane_version\": \"v1.3\",  
+    
+  \"subject\": {  
+  \"agent_instance_id\": \"spiffe://org/agent/planner#run-123\",  
+  \"subject_id\": \"spiffe://org/agent/planner\",  
+  \"attested\": true  
+  },  
+    
+  \"action\": {  
+  \"type\": \"tool.invoke\",  
+  \"tool_name\": \"crm.update_contact\",  
+  \"tool_category\": \"reversible_write\",  
+  \"risk_tier\": \"medium\"  
+  },  
+    
+  \"inputs\": {  
+  \"request_hash\": \"sha256:\...\",  
+  \"context_hash\": \"sha256:\...\"  
+  },  
+    
+  \"bundles\": {  
+  \"policy_bundle_hash\": \"sha256:\...\",  
+  \"tool_schema_hash\": \"sha256:\...\"  
+  },  
+    
+  \"result\": {  
+  \"decision\": \"allow\",  
+  \"reason_codes\": \[\"ALLOWLIST_MATCH\", \"BUDGET_OK\"\],  
+  \"obligations\": \[  
+  { \"type\": \"audit_log\", \"required\": true },  
+  { \"type\": \"sign_action\", \"required\": true },  
+  { \"type\": \"hitl_approval\", \"required\": false }  
+  \]  
+  }  
   }
   --------------------------------------------------------------------
 
@@ -1509,37 +1507,37 @@ Ledger events provide integrity. They should be append-only and verifiable.
 **LedgerEvent (JSON)**
 
   --------------------------------------------------------------------
-  {\
-  \"schema_version\": \"v1\",\
-  \"event_type\": \"gate.ledger.event\",\
-  \"time\": \"2025-12-24T10:20:01Z\",\
-  \
-  \"ledger_event_id\": \"uuid\",\
-  \"run_id\": \"uuid\",\
-  \"tenant_id\": \"tenant-123\",\
-  \"environment\": \"prod\",\
-  \
-  \"references\": {\
-  \"trace_id\": \"otel-trace-id\",\
-  \"policy_decision_id\": \"uuid\",\
-  \"tool_request_hash\": \"sha256:\...\",\
-  \"tool_response_hash\": \"sha256:\...\"\
-  },\
-  \
-  \"hash_chain\": {\
-  \"prev_event_hash\": \"sha256:\...\",\
-  \"event_hash\": \"sha256:\...\"\
-  },\
-  \
-  \"signatures\": {\
-  \"signing_key_id\": \"kid-123\",\
-  \"signature\": \"base64\...\"\
-  },\
-  \
-  \"immutability\": {\
-  \"sink_uri\": \"worm://audit/2025/12/24/\...\",\
-  \"retention_class\": \"tier_bounded_365d\"\
-  }\
+  {  
+  \"schema_version\": \"v1\",  
+  \"event_type\": \"gate.ledger.event\",  
+  \"time\": \"2025-12-24T10:20:01Z\",  
+    
+  \"ledger_event_id\": \"uuid\",  
+  \"run_id\": \"uuid\",  
+  \"tenant_id\": \"tenant-123\",  
+  \"environment\": \"prod\",  
+    
+  \"references\": {  
+  \"trace_id\": \"otel-trace-id\",  
+  \"policy_decision_id\": \"uuid\",  
+  \"tool_request_hash\": \"sha256:\...\",  
+  \"tool_response_hash\": \"sha256:\...\"  
+  },  
+    
+  \"hash_chain\": {  
+  \"prev_event_hash\": \"sha256:\...\",  
+  \"event_hash\": \"sha256:\...\"  
+  },  
+    
+  \"signatures\": {  
+  \"signing_key_id\": \"kid-123\",  
+  \"signature\": \"base64\...\"  
+  },  
+    
+  \"immutability\": {  
+  \"sink_uri\": \"worm://audit/2025/12/24/\...\",  
+  \"retention_class\": \"tier_bounded_365d\"  
+  }  
   }
   --------------------------------------------------------------------
 
@@ -1552,34 +1550,34 @@ Replay traces capture non-determinism and snapshot pointers.
 **ReplayTrace (YAML)**
 
   ----------------------------------------------------------------------------------------------------------------------------------------
-  schema_version: v1trace_id: trace-abcrun_id: uuidtenant_id: tenant-123\
-  environment: prod\
-  \
-  agent:\
-  agent_instance_id: \"spiffe://org/agent/planner#run-123\"\
-  agent_name: planner\
-  agent_version: 2.1.0\
-  \
-  model:\
-  model_id: provider/model\
-  model_version: \"2025-11-01\"\
-  temperature: 0.2\
-  seed: 123456\
-  decoding: \"greedy_or_sampled\"\
-  \
-  bundles:\
-  prompt_bundle_hash: \"sha256:\...\" policy_bundle_hash: \"sha256:\...\" tool_schema_hash: \"sha256:\...\"\
-  \
-  steps:\
-  - step_index: 1 step_type: \"retrieve_context\"\
-  retrieved_context_hashes: \[\"sha256:doc1\", \"sha256:doc2\"\]\
-  provenance_refs: \[\"prov://doc1\", \"prov://doc2\"\]\
-  \
-  - step_index: 2 step_type: \"tool_call\"\
-  tool_name: \"crm.update_contact\" request_hash: \"sha256:\...\" response_hash: \"sha256:\...\"\
-  response_snapshot_uri: \"immutable://snapshots/tool/crm.update_contact/\....\" policy_decision_id: \"uuid\" ledger_event_id: \"uuid\"\
-  \
-  - step_index: 3 step_type: \"final_output\"\
+  schema_version: v1trace_id: trace-abcrun_id: uuidtenant_id: tenant-123  
+  environment: prod  
+    
+  agent:  
+  agent_instance_id: \"spiffe://org/agent/planner#run-123\"  
+  agent_name: planner  
+  agent_version: 2.1.0  
+    
+  model:  
+  model_id: provider/model  
+  model_version: \"2025-11-01\"  
+  temperature: 0.2  
+  seed: 123456  
+  decoding: \"greedy_or_sampled\"  
+    
+  bundles:  
+  prompt_bundle_hash: \"sha256:\...\" policy_bundle_hash: \"sha256:\...\" tool_schema_hash: \"sha256:\...\"  
+    
+  steps:  
+  - step_index: 1 step_type: \"retrieve_context\"  
+  retrieved_context_hashes: \[\"sha256:doc1\", \"sha256:doc2\"\]  
+  provenance_refs: \[\"prov://doc1\", \"prov://doc2\"\]  
+    
+  - step_index: 2 step_type: \"tool_call\"  
+  tool_name: \"crm.update_contact\" request_hash: \"sha256:\...\" response_hash: \"sha256:\...\"  
+  response_snapshot_uri: \"immutable://snapshots/tool/crm.update_contact/\....\" policy_decision_id: \"uuid\" ledger_event_id: \"uuid\"  
+    
+  - step_index: 3 step_type: \"final_output\"  
   output_hash: \"sha256:\...\"
   ----------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1590,45 +1588,45 @@ Replay traces capture non-determinism and snapshot pointers.
 **AgentMessageEnvelope (JSON)**
 
   ------------------------------------------------------------------------------------------
-  {\
-  \"schema_version\": \"v1\",\
-  \"event_type\": \"gate.agent.message\",\
-  \"time\": \"2025-12-24T10:25:00Z\",\
-  \
-  \"run_id\": \"uuid\",\
-  \"trace_id\": \"otel-trace-id\",\
-  \"tenant_id\": \"tenant-123\",\
-  \
-  \"protocol\": {\
-  \"version\": \"1.0\",\
-  \"capabilities\": \[\"delegate_task\", \"return_result\"\],\
-  \"nonce\": \"random-unique-nonce\",\
-  \"expires_at\": \"2025-12-24T10:26:00Z\"\
-  },\
-  \
-  \"sender\": {\
-  \"agent_instance_id\": \"spiffe://org/agent/planner#run-123\",\
-  \"subject_id\": \"spiffe://org/agent/planner\"\
-  },\
-  \
-  \"recipient\": {\
-  \"subject_id\": \"spiffe://org/agent/executor\"\
-  },\
-  \
-  \"payload\": {\
-  \"type\": \"delegate_task\",\
-  \"task_id\": \"uuid\",\
-  \"inputs\": { \"tool\": \"crm.update_contact\", \"args\": { \"contact_id\": \"123\" } }\
-  },\
-  \
-  \"hashes\": {\
-  \"payload_hash\": \"sha256:\...\"\
-  },\
-  \
-  \"signature\": {\
-  \"key_id\": \"kid-456\",\
-  \"sig\": \"base64\...\"\
-  }\
+  {  
+  \"schema_version\": \"v1\",  
+  \"event_type\": \"gate.agent.message\",  
+  \"time\": \"2025-12-24T10:25:00Z\",  
+    
+  \"run_id\": \"uuid\",  
+  \"trace_id\": \"otel-trace-id\",  
+  \"tenant_id\": \"tenant-123\",  
+    
+  \"protocol\": {  
+  \"version\": \"1.0\",  
+  \"capabilities\": \[\"delegate_task\", \"return_result\"\],  
+  \"nonce\": \"random-unique-nonce\",  
+  \"expires_at\": \"2025-12-24T10:26:00Z\"  
+  },  
+    
+  \"sender\": {  
+  \"agent_instance_id\": \"spiffe://org/agent/planner#run-123\",  
+  \"subject_id\": \"spiffe://org/agent/planner\"  
+  },  
+    
+  \"recipient\": {  
+  \"subject_id\": \"spiffe://org/agent/executor\"  
+  },  
+    
+  \"payload\": {  
+  \"type\": \"delegate_task\",  
+  \"task_id\": \"uuid\",  
+  \"inputs\": { \"tool\": \"crm.update_contact\", \"args\": { \"contact_id\": \"123\" } }  
+  },  
+    
+  \"hashes\": {  
+  \"payload_hash\": \"sha256:\...\"  
+  },  
+    
+  \"signature\": {  
+  \"key_id\": \"kid-456\",  
+  \"sig\": \"base64\...\"  
+  }  
   }
   ------------------------------------------------------------------------------------------
 
@@ -1639,29 +1637,29 @@ Replay traces capture non-determinism and snapshot pointers.
 **HITLDecisionRecord (YAML)**
 
   -----------------------------------------------------------------------------------------
-  schema_version: v1\
-  approval_id: appr-uuid\
-  time: \"2025-12-24T10:22:00Z\"run_id: uuidtrace_id: otel-trace-idtenant_id: tenant-123\
-  environment: prod\
-  \
-  request:\
-  tool_name: transfer_funds request_hash: \"sha256:\...\"\
-  amount_usd: 5000\
-  destination_ref: \"vendor-verified-id\"\
-  \
-  context:\
-  orm_risk_score: 0.72 policy_decision_id: uuid\
-  ledger_head_ref: \"ledger://head/\...\"\
-  \
-  decision:\
-  approver_id: \"role:treasury-approver\"\
-  action: \"approve\" *\# approve \| deny \| modify \| request_more_info*\
-  justification: \"Vendor verified, within policy, invoice matched\"\
-  conditions:\
-  - \"must_use_account:primary\"\
-  - \"max_amount_usd:5000\"\
-  \
-  evidence:\
+  schema_version: v1  
+  approval_id: appr-uuid  
+  time: \"2025-12-24T10:22:00Z\"run_id: uuidtrace_id: otel-trace-idtenant_id: tenant-123  
+  environment: prod  
+    
+  request:  
+  tool_name: transfer_funds request_hash: \"sha256:\...\"  
+  amount_usd: 5000  
+  destination_ref: \"vendor-verified-id\"  
+    
+  context:  
+  orm_risk_score: 0.72 policy_decision_id: uuid  
+  ledger_head_ref: \"ledger://head/\...\"  
+    
+  decision:  
+  approver_id: \"role:treasury-approver\"  
+  action: \"approve\" *\# approve \| deny \| modify \| request_more_info*  
+  justification: \"Vendor verified, within policy, invoice matched\"  
+  conditions:  
+  - \"must_use_account:primary\"  
+  - \"max_amount_usd:5000\"  
+    
+  evidence:  
   signature: \"base64\...\" ledger_event_id: \"uuid\"
   -----------------------------------------------------------------------------------------
 
@@ -1669,7 +1667,6 @@ Replay traces capture non-determinism and snapshot pointers.
 
 # Reference Repository and Conformance Suite (Normative)
 
-::: {.callout-note title="Release status"}
 The schemas, contract definitions, and reference repositories in this section are normative for this release (v1.4).
 
 The automated conformance runner shipped in gate-conformance v1.2.0 (alongside the v1.3 framework release) and is at v1.3.0 for the v1.4 release. It automates 9 of the 20 conformance checks against your evidence store when run with default configuration. Check17 and Check18 report as AUTOMATED (rather than PARTIAL) when the runner is configured with `quality_bundle_store_uri` and `baseline_bundle_store_uri` pointing at reachable signed bundle stores; without those URIs configured they remain PARTIAL. Check20 joins the suite at v1.4 as PARTIAL: the coverage metric, bundle hash integrity, obligation distribution, and the bundle-default-hold guardrail are queryable; the human review workflow verification and the streaming policy verification require operator inspection.
@@ -1678,7 +1675,6 @@ Default configuration: 9 AUTOMATED, 11 PARTIAL across 20 checks.
 Configured with both bundle-store URIs: 11 AUTOMATED, 9 PARTIAL.
 
 Implementations SHOULD run the automated runner against their evidence store to produce the machine-readable half of the conformance report, and supply the operator-attested half for the PARTIAL checks.
-:::
 
 GATE is intended to be implementable and interoperable. To prevent "paper compliance" and inconsistent interpretations, GATE defines a normative reference repository set containing the canonical contracts, test harnesses, and example integrations. Implementations MAY vary by cloud provider, runtime, and vendor components, but they MUST conform to the schemas and checks in these repositories.
 
@@ -1731,8 +1727,8 @@ GATE defines 20 controls across four layers. Each control includes:
 
 - Failure modes (common mistakes)
 
-Purpose: Define the required *control plane mechanisms* that bound agent autonomy.\
-\
+Purpose: Define the required *control plane mechanisms* that bound agent autonomy.  
+  
 Control format: Each control includes Why / What / How / Evidence / Failure Modes because implementers need:
 
 - the risk driver (why),
@@ -1747,20 +1743,19 @@ Control format: Each control includes Why / What / How / Evidence / Failure Mode
 
 This format is intentionally practical: it reads like a "platform spec" rather than a conceptual paper.
 
-## Layer 1 - Identity and Integrity Controls {#sec-layer-1}
-### Control 01 - Workload Identity and Attestation {#sec-c01}
-
-**Why**\
+## Layer 1 - Identity and Integrity Controls
+### Control 01 - Workload Identity and Attestation
+**Why**  
 Agents are autonomous callers of privileged functions. If agent identity is shared, long-lived, or unprovable, you lose:
 
 - attribution (who did what)
 
 - containment (fast revocation)
 
-- integrity (was this the approved build/config?)\
+- integrity (was this the approved build/config?)  
   This creates "anonymous autonomy," which is incompatible with enterprise risk models.
 
-**What**\
+**What**  
 A per-agent-instance identity bound to verifiable runtime claims:
 
 - identity: short-lived workload token/certificate
@@ -1801,9 +1796,8 @@ A per-agent-instance identity bound to verifiable runtime claims:
 
 **Verification Decay:** Relying on ephemeral certificates for long-term non-repudiation. If an agent identity expires in 1 hour, a signature produced by it is unverifiable 1 year later without a trusted timestamping authority or transparency log.
 
-### Control 02 - Confidential Execution and Secret Boundary Control {#sec-c02}
-
-**Why**\
+### Control 02 - Confidential Execution and Secret Boundary Control
+**Why**  
 Most sensitive exposure occurs in memory during inference and mediation. Encryption at rest/in transit does not protect:
 
 - decrypted prompts
@@ -1816,7 +1810,7 @@ Most sensitive exposure occurs in memory during inference and mediation. Encrypt
 
 For high-sensitivity workloads, "plaintext in RAM" is the threat surface.
 
-**What**\
+**What**  
 A data-in-use protection control that:
 
 - isolates inference/tool mediation in confidential execution environments (where required)
@@ -1855,9 +1849,8 @@ A data-in-use protection control that:
 
 - using long-lived credentials inside agent runtime
 
-### Control 03 - Artifact Integrity and Supply Chain Controls {#sec-c03}
-
-**Why**\
+### Control 03 - Artifact Integrity and Supply Chain Controls
+**Why**  
 Agents are software. Software is compromised through supply chain drift:
 
 - unpinned dependencies
@@ -1868,7 +1861,7 @@ Agents are software. Software is compromised through supply chain drift:
 
 If you cannot prove what ran, you cannot trust outcomes or reproduce incidents.
 
-**What**\
+**What**  
 Signed and verified artifacts for:
 
 - container images
@@ -1909,10 +1902,9 @@ with a verifiable chain from source → build → deploy → runtime verificatio
 
 - inability to correlate a run to a specific build hash
 
-### Control 04 - Agent Lifecycle Governance {#sec-c04}
-
-**Why**\
-\
+### Control 04 - Agent Lifecycle Governance
+**Why**  
+  
 Without lifecycle governance, agents sprawl:
 
 - unknown instances running old versions
@@ -1923,11 +1915,11 @@ Without lifecycle governance, agents sprawl:
 
 This creates an unmanageable attack surface and breaks auditability.
 
-**What**\
-\
+**What**  
+  
 A lifecycle state machine and inventory control:
 
-- Commission → Attest → Run → Quiesce → Decommission\
+- Commission → Attest → Run → Quiesce → Decommission  
   with required ABOM, ownership, and retirement steps.
 
 **How**
@@ -1958,8 +1950,7 @@ A lifecycle state machine and inventory control:
 
 - orphaned agents with no owner or purpose
 
-### Control 17 - Agent Discovery and Shadow AI Detection {#sec-c17}
-
+### Control 17 - Agent Discovery and Shadow AI Detection
 **Layer 1 - Identity and Integrity Controls**
 
 Placement rationale: C17 sits in Layer 1 alongside C04 because it is an inventory and identity-boundary control. C04 governs the lifecycle of agents that have entered the control plane; C17 governs the act of getting them into the control plane in the first place. The two controls share an evidence stream: a discovery event in C17 either resolves to a C04 Commission record (the agent is enrolled) or a termination record (the agent is removed). C17 is the feeder, C04 is the receiver. Placing C17 in any other layer would conceal the fact that it is operating on candidates that do not yet have a workload identity.
@@ -2104,7 +2095,7 @@ The auto_enrolment_policy shape is normative in v1.4. See auto_enrolment_policy.
 
 - Network detector blind spots: deploying the detector only on outbound egress and missing intra-VPC inference services. Agents that call a local LLM service inside the VPC produce no egress signal. Mitigation: instrument the Tool Gateway's own ingress as a detection point so any call to a registered tool that lacks a corresponding C04 identity is itself a discovery signal.
 
-- Owner resolution gaps: cloud assets without billing tags or owner tags produce candidates\
+- Owner resolution gaps: cloud assets without billing tags or owner tags produce candidates  
   that cannot be routed for remediation. They sit in Discovered indefinitely. Mitigation: enforce a tagging policy as a precondition for asset creation in the governed environment, and treat untagged candidates as immediate-termination by default.
 
 - Observe-only drift: the control is deployed in observe-only mode and never promoted because the candidate backlog is too large. Mitigation: a documented promotion criterion tied to backlog size, not time, and an executive escalation path if the backlog cannot be drained within a defined window.
@@ -2125,14 +2116,13 @@ C17 maps to GOVERN and MAP. GOVERN: the control implements GV-1.6 (mechanisms ex
 
 C17 maps to A.6.2.2 (AI system inventory) and A.6.1.1 (AI system identification). It also supports clause 8.1 (operational planning and control) by ensuring that operational controls apply to the full population of AI systems, not only the declared population. Typical evidence produced: discovery and remediation logs, exception register with TTLs, inventory reconciliation reports.
 
-# Layer 2 - Runtime Enforcement Controls {#sec-layer-2}
-### Control 05 - Tool Gateway with Policy-as-Code Enforcement {#sec-c05}
-
-**Why**\
-The model is not a security boundary. Prompt guardrails are soft and bypassable.\
+# Layer 2 - Runtime Enforcement Controls
+### Control 05 - Tool Gateway with Policy-as-Code Enforcement
+**Why**  
+The model is not a security boundary. Prompt guardrails are soft and bypassable.  
 All side effects must be controlled by deterministic enforcement.
 
-**What**\
+**What**  
 A Tool Gateway that:
 
 - authenticates the agent identity (C01)
@@ -2179,18 +2169,17 @@ A Tool Gateway that:
 
 - obligations not enforced (logged but ignored)
 
-### Control 06 - Circuit Breakers and Emergency Stop {#sec-c06}
-
-**Why**\
-Autonomous loops and cascades can produce damage at machine speed.\
-\
+### Control 06 - Circuit Breakers and Emergency Stop
+**Why**  
+Autonomous loops and cascades can produce damage at machine speed.  
+  
 You need both:
 
 - manual stop (break-glass)
 
 - automatic stop (breakers)
 
-**What**\
+**What**  
 A supervisory stop system that:
 
 - can disable an agent's ability to perform side effects instantly
@@ -2223,9 +2212,8 @@ A supervisory stop system that:
 
 - termination without capturing replay evidence
 
-### Control 07 - Resource Governance and Economic Safety {#sec-c07}
-
-**Why**\
+### Control 07 - Resource Governance and Economic Safety
+**Why**  
 Agents can recursively generate work. This creates:
 
 - cost overruns
@@ -2234,8 +2222,8 @@ Agents can recursively generate work. This creates:
 
 - runaway delegation storms
 
-**What**\
-\
+**What**  
+  
 Enforced budgets and quotas per:
 
 - agent instance
@@ -2280,14 +2268,13 @@ including token budgets, call budgets, concurrency limits, and spend velocity co
 
 GATE separates *request-level enforcement* from *system-level flow control*. The Tool Gateway enforces micro-level protections on individual tool calls: per-tool rate limits, per-identity quotas, per-request budgets, and spend/velocity caps. The Orchestrator enforces macro-level system health: queue depth limits, concurrency ceilings, global backpressure, workflow scheduling, retries/backoff, and circuit-breaking at the workflow level. In practice: the Gateway protects tools from abusive request patterns; the Orchestrator protects the system from runaway workflows and cascading failure.
 
-### Control 08 - Prompt and Content Injection Defence {#sec-c08}
-
-**Why**\
-Injection attacks cause the model to treat untrusted content as instructions.\
-\
+### Control 08 - Prompt and Content Injection Defence
+**Why**  
+Injection attacks cause the model to treat untrusted content as instructions.  
+  
 Indirect injection (retrieved docs) is especially dangerous because it arrives "inside the context."
 
-**What**\
+**What**  
 A layered defence that:
 
 - classifies content sources (trusted vs untrusted)
@@ -2328,8 +2315,7 @@ A layered defence that:
 
 - Treating C08 as a quality gate for retrieved content. C08 defends against adversarial inputs and instruction injection, not against stale, low-confidence, or unverified information. See the Memory flow scope note in the Reference Architecture and C18 (Data Quality Gates) for the boundary that covers content quality and freshness.
 
-### Control 09 - Execution Constraints and Invariant Enforcement {#sec-c09}
-
+### Control 09 - Execution Constraints and Invariant Enforcement
 **Why**
 
 Without this control, an agent can invoke a tool that is technically policy-permitted but operationally catastrophic - because policy rules are contextual (allow/deny given claims and risk scores), while some constraints must hold unconditionally. Examples: no funds transfer above a hard limit regardless of ORM score; no record deletion outside a defined maintenance window; no external API calls to non-allowlisted domains even if the policy engine allows it. Prompt-based constraints fail because they are model-dependent and bypassable via injection or hallucination. Policy-as-code (C05) is necessary but insufficient: policies evaluate context, while invariants must hold regardless of context. This control enforces the invariants that are evaluated after policy but are independent of policy context. In GATE, policy decides when an action is allowed, but invariants decide whether an allowed action is ever permissible.
@@ -2418,8 +2404,7 @@ Break-glass is permitted at high_privilege tier as the documented escape hatch f
 
 Note for future versions. The broader exception-lifecycle contract for the exception register referenced by C09, C17, C18, and C19 (the data.gate.exceptions data source consumed by their Rego policies) is forthcoming in v1.5. v1.4 closes the specific break-glass record gap as described above; it does not unify the exception register surface across all four controls.
 
-### Control 18 - Data Quality Gates {#sec-c18}
-
+### Control 18 - Data Quality Gates
 **Layer 2 - Runtime Enforcement Controls**
 
 Placement rationale: C18 sits in Layer 2 alongside C08 and C09 because it is a runtime enforcement gate at a control boundary. C08 defends the prompt/content channel against adversarial inputs at retrieval and ingestion. C09 enforces invariants at the tool boundary. C18 enforces minimum quality gates at the memory retrieval boundary - the same architectural location as C08's retrieval-side defences, expressed through the same Memory Gateway. Placing C18 in Layer 3 (observability) would be wrong: this control denies or downgrades retrievals at enforcement time, it does not merely observe them. Placing it in Layer 1 (identity and integrity) would also be wrong: integrity here means whether the content matches what was stored, not whether the content was worth storing. The retrieval gate is the right home.
@@ -2568,12 +2553,11 @@ C18 maps to MEASURE and MANAGE. MEASURE: the control implements MS-2.10 (data qu
 
 C18 maps to A.7.4 (quality of data used in AI systems) and A.7.5 (data provenance), with a supporting link to A.8.3 (information for interested parties) via the quality decision evidence stream. Typical evidence produced: quality decision logs, quality bundle versions, content-class TTL configuration, provenance verification reports.
 
-# Layer 3 - Observability and Forensics Controls {#sec-layer-3}
-### Control 10 - Deterministic Replay {#sec-c10}
-
-**Why**\
-If you can't replay, you can't debug reliably, prove causality, or validate mitigations.\
-\
+# Layer 3 - Observability and Forensics Controls
+### Control 10 - Deterministic Replay
+**Why**  
+If you can't replay, you can't debug reliably, prove causality, or validate mitigations.  
+  
 Non-determinism becomes operational chaos.
 
 **What**
@@ -2602,8 +2586,8 @@ A replay trace that captures all non-determinism:
 
 - build a replay harness that stubs tool calls with recorded responses
 
-**Architect's Note - Replay cold start (expired identity/policy)**\
-\
+**Architect's Note - Replay cold start (expired identity/policy)**  
+  
 GATE replay is defined as "no live dependencies," which includes control-plane dependencies that may change over time. A replay executed months later MUST NOT fail due to expired tokens, rotated keys, or updated policy bundles. The replay harness therefore MUST provide local mocks (or recorded fixtures) for:
 
 - Identity Provider / Attestation verification: return the recorded workload identity claims and attestation status for the run being replayed (verification must succeed against recorded evidence, not current tokens).
@@ -2628,12 +2612,11 @@ Normative requirement: Replay execution must validate authenticity by verifying 
 
 - model/prompt versions not pinned
 
-### Control 11 - Verifiable Audit Ledger {#sec-c11}
-
-**Why**\
+### Control 11 - Verifiable Audit Ledger
+**Why**  
 Mutable logs are not defensible. Compromised workloads can erase evidence.
 
-**What**\
+**What**  
 A tamper-evident ledger that:
 
 - hash chains events
@@ -2670,14 +2653,13 @@ A tamper-evident ledger that:
 
 - **Mitigation:** Implement **Crypto-Shredding**. Encrypt sensitive payload snapshots with ephemeral keys managed in a separate KMS. To comply with deletion requests, destroy the key, leaving the immutable ledger entry intact but unreadable.
 
-### Control 12 - Signed Actions and Non-Repudiation {#sec-c12}
-
-**Why**\
-You must be able to prove which agent performed a critical action, with what authorization.\
-\
+### Control 12 - Signed Actions and Non-Repudiation
+**Why**  
+You must be able to prove which agent performed a critical action, with what authorization.  
+  
 This is accountability and legal defensibility.
 
-**What**\
+**What**  
 Digital signatures applied to:
 
 - high-impact tool invocations
@@ -2710,14 +2692,13 @@ Digital signatures applied to:
 
 - unsigned emergency/admin paths
 
-### Control 13 - Agent-Native Observability and Semantic Tracing {#sec-c13}
-
-**Why**\
-You need "why" telemetry, not just "what happened."\
-\
+### Control 13 - Agent-Native Observability and Semantic Tracing
+**Why**  
+You need "why" telemetry, not just "what happened."  
+  
 But storing raw chain-of-thought is risky. The right balance is structured semantic traces.
 
-**What**\
+**What**  
 A standard semantic event model that captures:
 
 - intent summaries
@@ -2752,8 +2733,7 @@ A standard semantic event model that captures:
 
 - lack of redaction and classification in telemetry
 
-### Control 19 - Model Behaviour Monitoring {#sec-c19}
-
+### Control 19 - Model Behaviour Monitoring
 **Layer 3 - Observability and Forensics Controls**
 
 Placement rationale: C19 sits in Layer 3 alongside C13 (semantic observability) and C16 (continuous adversarial validation) because it is a continuous, statistical observation of model behaviour over time. The distinction from C16 is preserved deliberately and stated explicitly below. C13 captures intent telemetry on a per-run basis. C16 runs an adversarial harness against known attack scenarios. C19 watches the distribution of model behaviour against a baseline and flags statistically significant drift without requiring an adversarial trigger.
@@ -2913,8 +2893,7 @@ C19 maps to A.9 (performance monitoring of AI systems), A.8.2 (operations of the
 <!-- C20 is rendered from its on-disk source-of-truth spec. See chapters/_includes/README.md -->
 <!-- Thin Quarto wrapper. Source of truth: /controls/C20-output-validation.md
      Do not edit control prose here; edit the spec and re-render. -->
-### Control 20 - Agent-to-Human Output Validation {#sec-c20}
-
+### Control 20 - Agent-to-Human Output Validation
 **Layer:** Layer 3 - Observability and Forensics Controls
 **Placement rationale:** C20 sits in Layer 3 alongside C13 (semantic observability) and C19 (model behaviour monitoring) because it is an observation-and-response control that operates on the agent's output stream rather than on its tool calls or its memory reads. C13 captures the agent's intent telemetry on a per-run basis. C19 watches the statistical distribution of behaviour over time. C20 inspects the content of every final response immediately before delivery and routes it through a configured action matrix. All three controls operate on the output stream but at different levels: C13 is per-run intent, C19 is aggregate drift, C20 is per-response content classification. Placing C20 in Layer 2 would misrepresent it as a per-call decision gate on the same axis as C05 and C09; placing it in Layer 1 would imply that output classification is an identity property. Layer 3 is the right home: output validation is observation of the response stream with a governance response path attached, exactly the shape Layer 3 already carries.
 
@@ -3167,13 +3146,12 @@ These are explicit boundaries on what C20 covers in v1.4. Each is a candidate fo
 
 External references for C20 (EU AI Act, OWASP AISVS, MITRE ATLAS) are consolidated in the paper's main References chapter.
 
-# Layer 4 - Orchestration and Ecosystem Controls {#sec-layer-4}
-### Control 14 - Secure Multi-Agent Protocols {#sec-c14}
-
-**Why**\
+# Layer 4 - Orchestration and Ecosystem Controls
+### Control 14 - Secure Multi-Agent Protocols
+**Why**  
 Multi-agent systems increase complexity and attack surface. If agents exchange free-form text, you get ambiguity, spoofing, and privilege escalation.
 
-**What**\
+**What**  
 A strict protocol envelope that provides:
 
 - authenticated sender identity
@@ -3214,12 +3192,11 @@ A strict protocol envelope that provides:
 
 - protocol version drift without compatibility tests
 
-### Control 15 - Distributed Orchestration Control Plane {#sec-c15}
-
-**Why**\
+### Control 15 - Distributed Orchestration Control Plane
+**Why**  
 Agents behave like distributed actors. Without orchestration you get uncontrolled retries, unclear dependencies, and unsafe rollouts.
 
-**What**\
+**What**  
 A workflow/orchestration layer that:
 
 - coordinates task DAGs
@@ -3264,12 +3241,11 @@ A workflow/orchestration layer that:
 
 Control 15 defines orchestration-level governance (queue depth, concurrency, backpressure, scheduling, retries/backoff). It does not replace Gateway-level rate limiting and quotas (Control 07); it governs *workflow execution dynamics* across many calls and many agents.
 
-### Control 16 - Continuous Adversarial Validation and High-Assurance Verification {#sec-c16}
-
-**Why**\
+### Control 16 - Continuous Adversarial Validation and High-Assurance Verification
+**Why**  
 Attackers adapt. Also, some invariants must be provably true.
 
-**What**\
+**What**  
 Two complementary practices:
 
 1.  Continuous adversarial validation: CI/CD harness for injection, tool misuse, poisoning, and replay regressions
@@ -3436,36 +3412,36 @@ GATE introduces predictable overhead at the enforcement boundary. Implementers s
 
 - For bounded/high-privilege tiers, define an explicit SLO for "durable evidence latency" (e.g., ledger commit within N seconds) and ensure the system behaves safely while evidence is pending.
 
-**Throughput sizing (rule of thumb)**\
-\
+**Throughput sizing (rule of thumb)**  
+  
 Let:
 
 - T = tool calls/sec (peak)
 
 - E = evidence events per tool call (decision + envelopes + ledger + observability + replay steps)
 
-Then expected event ingest is approximately:\
-\
-events/sec ≈ T × E\
-\
+Then expected event ingest is approximately:  
+  
+events/sec ≈ T × E  
+  
 Size the ledger, observability pipeline, and replay recorder for peak events/sec, not average traffic.
 
-**Storage growth (rule of thumb)**\
-\
+**Storage growth (rule of thumb)**  
+  
 Let:
 
 - S = average evidence bytes per tool call (including snapshots if enabled)
 
 - N = tool calls/day
 
-Then daily evidence volume is approximately:\
-\
-bytes/day ≈ S × N\
-\
+Then daily evidence volume is approximately:  
+  
+bytes/day ≈ S × N  
+  
 Bound S by default via redaction/pointers for sensitive payloads and by enabling snapshots only where replay is required.
 
-**Backpressure**\
-\
+**Backpressure**  
+  
 The orchestrator MUST enforce backpressure on:
 
 - queue depth
@@ -3557,18 +3533,18 @@ The check numbering is preserved across v1.3 and v1.4 for tool and evidence stab
 
 ## Conformance Check 01 - No Tool Execution Without Policy Decision Record
 
-Requirement: Every tool invocation must have a corresponding PolicyDecisionRecord (allow/deny/obligations).\
-\
+Requirement: Every tool invocation must have a corresponding PolicyDecisionRecord (allow/deny/obligations).  
+  
 Evidence: For each ToolResponseEnvelope, there exists a PolicyDecisionRecord.decision_id referenced, with matching request_hash and policy_bundle_hash.
 
 ## Conformance Check 02 - No Bypass Paths to Tools
 
-Requirement: Agents cannot call enterprise tools directly (network + IAM + SDK constraints).\
-\
+Requirement: Agents cannot call enterprise tools directly (network + IAM + SDK constraints).  
+  
 Evidence: Network policy / firewall rules + IAM deny policies + logs showing all tool calls originate from Tool Gateway identity, not agent runtime identity.
 
-**Implementation patterns (normative)**\
-\
+**Implementation patterns (normative)**  
+  
 To satisfy "no bypass paths," implementers MUST ensure that tools/APIs are reachable only via the Tool Gateway identity and network path:
 
 - Identity boundary: agent runtimes do not possess tool credentials; only the Tool Gateway has the capability to invoke tools.
@@ -3581,82 +3557,82 @@ This requirement is intentionally vendor-neutral: the enforcement can be IAM, ne
 
 ## Conformance Check 03 - Verified Workload Identity on Every Privileged Request
 
-Requirement: Tool Gateway and Memory Gateway must reject requests without valid identity + attestation claims.\
-\
+Requirement: Tool Gateway and Memory Gateway must reject requests without valid identity + attestation claims.  
+  
 Evidence: Gateway logs show identity verification for each request; sampled negative tests produce denies with reason codes.
 
 ## Conformance Check 04 - Schema Validation for Tool Inputs
 
-Requirement: Tool requests must conform to versioned tool schemas; malformed or ambiguous requests are rejected.\
-\
+Requirement: Tool requests must conform to versioned tool schemas; malformed or ambiguous requests are rejected.  
+  
 Evidence: tool_schema_hash present; schema validation reject logs; conformance tests showing rejects for invalid payloads.
 
 ## Conformance Check 05 - Immutable, Tamper-Evident Audit Ledger
 
-Requirement: Ledger events must be hash-chained and stored in immutable retention.\
-\
+Requirement: Ledger events must be hash-chained and stored in immutable retention.  
+  
 Evidence: LedgerEvent.hash_chain fields; periodic integrity verification reports; immutable sink retention proof.
 
 ## Conformance Check 06 - Deterministic Replay Reproduces an Incident Run
 
-Requirement: Given a stored replay trace and snapshots, a replay harness reproduces the run at the tool and memory boundary by reusing recorded snapshots and pinned bundles, producing the same request_hash and response_hash pairs and equivalent side-effect outcomes, without live external dependencies.\
-\
-Evidence: Replay output includes matching request_hash and response_hash for each tool and memory step; replay report is stored in immutable retention and references the originating trace_id, run_id, and policy_bundle_hash.\
-\
+Requirement: Given a stored replay trace and snapshots, a replay harness reproduces the run at the tool and memory boundary by reusing recorded snapshots and pinned bundles, producing the same request_hash and response_hash pairs and equivalent side-effect outcomes, without live external dependencies.  
+  
+Evidence: Replay output includes matching request_hash and response_hash for each tool and memory step; replay report is stored in immutable retention and references the originating trace_id, run_id, and policy_bundle_hash.  
+  
 Replay harness uses archived policy bundles and identity fixtures (no dependence on live tokens/STS), and produces a replay report that verifies recorded signatures and hash links.
 
 ## Conformance Check 07 - Breakers Stop Side Effects
 
-Requirement: Kill switch and circuit breakers halt side-effecting tool calls within an operational SLO.\
-\
+Requirement: Kill switch and circuit breakers halt side-effecting tool calls within an operational SLO.  
+  
 Evidence: Breaker trigger event + subsequent denies for side-effect tools; measured time-to-containment (e.g., \< 30 seconds).
 
 ## Conformance Check 08 - Resource Budgets are Enforced, Not Just Observed
 
-Requirement: Token/tool/cost budgets must prevent continued execution beyond thresholds.\
-\
+Requirement: Token/tool/cost budgets must prevent continued execution beyond thresholds.  
+  
 Evidence: Budget decrement events; deny/throttle events when budgets exhausted; test cases that intentionally exceed budgets.
 
 ## Conformance Check 09 - High-Impact Actions Require Non-Repudiation
 
-Requirement: For high-impact tool categories (financial, infrastructure, irreversible write), actions must be signed and verifiable.\
-\
+Requirement: For high-impact tool categories (financial, infrastructure, irreversible write), actions must be signed and verifiable.  
+  
 Evidence: Signed Actions coverage reports; signature verification logs; sampled verification passes.
 
 ## Conformance Check 10 - Memory Access is Authorized at Retrieval Time
 
-Requirement: Memory reads must apply ACL/ABAC filtering at query-time, not only at ingest.\
-\
+Requirement: Memory reads must apply ACL/ABAC filtering at query-time, not only at ingest.  
+  
 Evidence: Memory gateway decision logs for reads; negative tests demonstrating cross-tenant or cross-role reads are denied.
 
 ## Conformance Check 11 - Poisoning Detection and Quarantine Path Exists
 
-Requirement: Suspicious memory writes or retrieved content triggers quarantine/flagging and blocks propagation where configured.\
-\
+Requirement: Suspicious memory writes or retrieved content triggers quarantine/flagging and blocks propagation where configured.  
+  
 Evidence: Quarantine events; provenance failures; test scenario results.
 
 ## Conformance Check 12 - Semantic Observability Correlates to Evidence
 
-Requirement: Semantic trace events must correlate to policy decisions, tool invocations, ledger events, and replay steps.\
-\
+Requirement: Semantic trace events must correlate to policy decisions, tool invocations, ledger events, and replay steps.  
+  
 Evidence: Correlation queries demonstrate linkage: semantic_event.audit_ref -\> ledger_event_id -\> policy_decision_id -\> replay_trace_step.
 
 ## Conformance Check 13 - Policy Bundle Versioning and Hash Pinning
 
-Requirement: Every decision is traceable to a specific policy bundle hash; changes are versioned and deployable independently.\
-\
+Requirement: Every decision is traceable to a specific policy bundle hash; changes are versioned and deployable independently.  
+  
 Evidence: policy_bundle_hash in decision records; release logs; rollback proof.
 
 ## Conformance Check 14 - HITL Approvals are Signed and Enforced
 
-Requirement: When policy requires HITL, execution must be blocked until an approval record exists and is valid.\
-\
+Requirement: When policy requires HITL, execution must be blocked until an approval record exists and is valid.  
+  
 Evidence: HITLDecisionRecord linked to tool call; denies occur without approval; approval signatures verify.
 
 ## Conformance Check 15 - Multi-Agent Messages are Signed, Versioned, Nonce-Protected
 
-Requirement: Agent-to-agent communications must enforce envelope schema, signature verification, and nonce replay protection.\
-\
+Requirement: Agent-to-agent communications must enforce envelope schema, signature verification, and nonce replay protection.  
+  
 Evidence: AgentMessageEnvelope validation logs; negative tests for spoofed sender and replayed nonce are rejected.
 
 ## Conformance Check 16 - Unenrolled Workloads are Detected and Remediated
@@ -4043,20 +4019,20 @@ The gate-conformance repository holds additional mappings that are informative b
 ## Artifact A3 - Policy-as-Code Tool Gateway (Rego template)
 
   --------------------------------------------------------------------
-  package gate.toolpolicy\
-  default allow := false\
-  \
-  allow {\
-  input.tool == \"transfer_funds\"\
-  input.amount_usd \<= 1000\
-  input.destination_verified == true\
-  input.orm_risk \<= 0.60\
-  input.identity.attested == true\
-  }\
-  \
-  obligations\[\"require_hitl\"\] {\
-  input.tool == \"transfer_funds\"\
-  input.amount_usd \> 500\
+  package gate.toolpolicy  
+  default allow := false  
+    
+  allow {  
+  input.tool == \"transfer_funds\"  
+  input.amount_usd \<= 1000  
+  input.destination_verified == true  
+  input.orm_risk \<= 0.60  
+  input.identity.attested == true  
+  }  
+    
+  obligations\[\"require_hitl\"\] {  
+  input.tool == \"transfer_funds\"  
+  input.amount_usd \> 500  
   }
   --------------------------------------------------------------------
 
@@ -4065,14 +4041,14 @@ The gate-conformance repository holds additional mappings that are informative b
 ## Artifact A4 - Secure Multi-Agent Protocol Envelope
 
   ---------------------------------------------------------------------------------------
-  {\
-  \"version\": \"v1\",\
-  \"sender_id\": \"spiffe://org/agent/planner\",\
-  \"timestamp\": \"2025-12-24T10:20:00Z\",\
-  \"nonce\": \"random-unique\",\
-  \"payload\": { \"type\": \"delegate_task\", \"task_id\": \"uuid\", \"inputs\": {} },\
-  \"payload_hash\": \"sha256:\...\",\
-  \"signature\": \"sig:\...\"\
+  {  
+  \"version\": \"v1\",  
+  \"sender_id\": \"spiffe://org/agent/planner\",  
+  \"timestamp\": \"2025-12-24T10:20:00Z\",  
+  \"nonce\": \"random-unique\",  
+  \"payload\": { \"type\": \"delegate_task\", \"task_id\": \"uuid\", \"inputs\": {} },  
+  \"payload_hash\": \"sha256:\...\",  
+  \"signature\": \"sig:\...\"  
   }
   ---------------------------------------------------------------------------------------
 
@@ -4081,16 +4057,16 @@ The gate-conformance repository holds additional mappings that are informative b
 ## Artifact A5 - Semantic Observability Event Schema (excerpt)
 
   ----------------------------------------------------------------------------------
-  {\
-  \"event_type\": \"gate.tool_call\",\
-  \"time\": \"2025-12-24T10:20:00Z\",\
-  \"agent_instance_id\": \"spiffe://org/agent/x#run-123\",\
-  \"trace_id\": \"trace-abc\",\
-  \"intent\": \"Update CRM contact email\",\
-  \"tool\": { \"name\": \"crm.update_contact\", \"args_hash\": \"sha256:\...\" },\
-  \"policy\": { \"decision\": \"allow\", \"policy_hash\": \"sha256:\...\" },\
-  \"orm\": { \"risk\": 0.42, \"band\": \"medium\" },\
-  \"audit_ref\": \"ledger_event_id\"\
+  {  
+  \"event_type\": \"gate.tool_call\",  
+  \"time\": \"2025-12-24T10:20:00Z\",  
+  \"agent_instance_id\": \"spiffe://org/agent/x#run-123\",  
+  \"trace_id\": \"trace-abc\",  
+  \"intent\": \"Update CRM contact email\",  
+  \"tool\": { \"name\": \"crm.update_contact\", \"args_hash\": \"sha256:\...\" },  
+  \"policy\": { \"decision\": \"allow\", \"policy_hash\": \"sha256:\...\" },  
+  \"orm\": { \"risk\": 0.42, \"band\": \"medium\" },  
+  \"audit_ref\": \"ledger_event_id\"  
   }
   ----------------------------------------------------------------------------------
 
@@ -4099,24 +4075,24 @@ The gate-conformance repository holds additional mappings that are informative b
 ## Artifact A6 - Deterministic Replay Trace Format
 
   --------------------------------------------------------------------
-  trace_id: \"trace-abc\"\
-  model:\
-  model_id: \"provider/model\"\
-  temperature: 0.2\
-  seed: 123456\
-  bundles:\
-  prompt_hash: \"sha256:\...\"\
-  policy_hash: \"sha256:\...\"\
-  steps:\
-  - step: 1\
-  input_hash: \"sha256:\...\"\
-  retrieved_context_hashes: \[\"sha256:\...\"\]\
-  - step: 2\
-  tool: \"crm.update_contact\" request_hash: \"sha256:\...\"\
-  response_snapshot_uri: \"immutable://snapshots/..\"\
-  decisions:\
-  - step: 2\
-  policy_decision: \"allow\"\
+  trace_id: \"trace-abc\"  
+  model:  
+  model_id: \"provider/model\"  
+  temperature: 0.2  
+  seed: 123456  
+  bundles:  
+  prompt_hash: \"sha256:\...\"  
+  policy_hash: \"sha256:\...\"  
+  steps:  
+  - step: 1  
+  input_hash: \"sha256:\...\"  
+  retrieved_context_hashes: \[\"sha256:\...\"\]  
+  - step: 2  
+  tool: \"crm.update_contact\" request_hash: \"sha256:\...\"  
+  response_snapshot_uri: \"immutable://snapshots/..\"  
+  decisions:  
+  - step: 2  
+  policy_decision: \"allow\"  
   obligations: \[\"log\", \"sign\"\]
   --------------------------------------------------------------------
 
@@ -4147,14 +4123,14 @@ Before promoting to production, validate your configuration against at least thr
 Each weight represents the maximum contribution of that signal to the composite risk score when the signal fires at full strength. Weights must sum to 1.0. If you add new signals, rebalance existing weights accordingly and document the change in your invariant bundle review log.
 
   --------------------------------------------------------------------
-  thresholds:\
-  auto_execute: 0.20 add_verification: 0.45 require_hitl: 0.65\
-  block: 0.85\
-  \
-  weights:\
-  high_impact_tool: 0.20\
-  policy_exception: 0.20 adversarial_flag: 0.25\
-  quota_pressure: 0.10 memory_poisoning_suspect: 0.20\
+  thresholds:  
+  auto_execute: 0.20 add_verification: 0.45 require_hitl: 0.65  
+  block: 0.85  
+    
+  weights:  
+  high_impact_tool: 0.20  
+  policy_exception: 0.20 adversarial_flag: 0.25  
+  quota_pressure: 0.10 memory_poisoning_suspect: 0.20  
   version_divergence: 0.05
   --------------------------------------------------------------------
 
@@ -4164,8 +4140,8 @@ Each weight represents the maximum contribution of that signal to the composite 
 
 **Runbook 1 - Break-glass stop (containment) and recovery**
 
-Trigger: suspected compromise, runaway execution, unsafe tool actions, or evidence integrity failure.\
-\
+Trigger: suspected compromise, runaway execution, unsafe tool actions, or evidence integrity failure.  
+  
 Action:
 
 1.  Activate stop mechanism at the Tool Gateway to deny all write/financial/infrastructure categories.
@@ -4174,26 +4150,26 @@ Action:
 
 3.  Snapshot evidence pointers: policy decisions, ledger integrity state, replay traces for affected run_ids.
 
-4.  Rotate affected credentials / revoke workload identities.\
+4.  Rotate affected credentials / revoke workload identities.  
     Evidence required: breaker event, stop activation record, list of affected identities, ledger integrity report, replay trace pointers.
 
 **Runbook 2 - Policy bundle rollback (safe revert)**
 
-Trigger: policy change causes outages or unsafe behavior.\
-\
+Trigger: policy change causes outages or unsafe behavior.  
+  
 Action:
 
 1.  Roll back to last known good policy_bundle_hash.
 
 2.  Verify policy bundle signature and hash pinning.
 
-3.  Re-run conformance checks 01--05 and 13.\
+3.  Re-run conformance checks 01--05 and 13.  
     Evidence required: change record, bundle hashes, signature verification logs, conformance report.
 
 **Runbook 3 - Incident replay procedure**
 
-Trigger: investigate a run that performed or attempted a high-impact action.\
-\
+Trigger: investigate a run that performed or attempted a high-impact action.  
+  
 Action:
 
 1.  Locate run_id / trace_id.
@@ -4202,41 +4178,41 @@ Action:
 
 3.  Execute replay harness in "no live dependencies" mode.
 
-4.  Produce replay report with matching request_hash/response_hash pairs.\
+4.  Produce replay report with matching request_hash/response_hash pairs.  
     Evidence required: replay report, snapshot pointers, ledger references, policy bundle hash, tool schema hashes.
 
 **Runbook 4 - HITL outage behavior and reconciliation**
 
-Trigger: HITL system degraded/unavailable while approvals are required.\
-\
+Trigger: HITL system degraded/unavailable while approvals are required.  
+  
 Action:
 
 1.  Enforce fail-closed for actions requiring HITL obligations.
 
 2.  Queue approval requests with TTL; expire safely.
 
-3.  Reconcile queued requests when service returns (no automatic execution without re-evaluation).\
+3.  Reconcile queued requests when service returns (no automatic execution without re-evaluation).  
     Evidence required: queued approval records, expiry logs, re-evaluated policy decision records.
 
 **Runbook 5 - Signing key rotation and verification continuity**
 
-Trigger: routine rotation or suspected key compromise.\
-\
+Trigger: routine rotation or suspected key compromise.  
+  
 Action:
 
 1.  Introduce new key with overlapping validity window.
 
 2.  Update verification trust store in gateways and ledger verifiers.
 
-3.  Verify new signatures and ensure ledger chain continuity.\
+3.  Verify new signatures and ensure ledger chain continuity.  
     Evidence required: key change record, verification logs, ledger integrity report before/after.
 
 # Appendix: Cloud-by-Cloud Quickstart Architecture (AWS / Azure / GCP)
 
-Framework name: Governed Agent Trust Environment (GATE)\
-\
-Goal: provide a minimal, deployable architecture that implements GATE's core enforcement loop: Identity → Policy → Tools/Memory → Audit/Replay → Observability/HITL → ORM.\
-\
+Framework name: Governed Agent Trust Environment (GATE)  
+  
+Goal: provide a minimal, deployable architecture that implements GATE's core enforcement loop: Identity → Policy → Tools/Memory → Audit/Replay → Observability/HITL → ORM.  
+  
 Scope: a single-agent workflow plus a multi-agent-safe foundation. Vendor-neutral contracts; cloud-native building blocks.
 
 **Scope and parity note**
@@ -4690,135 +4666,134 @@ HITL / Workflow (optional)
 
 ## Glossary
 
-**ABOM (Agent Bill of Materials)**\
+**ABOM (Agent Bill of Materials)**  
 A versioned manifest describing an agent's allowed runtime artifacts and governance posture. Typically includes agent name/version, image digest, policy bundle hash, prompt bundle hash, toolset hash, required GATE Controls, memory partitions, allowed tools, and autonomy tier. Used for integrity binding and auditability.
 
-**Action (Tool Action)**\
+**Action (Tool Action)**  
 A discrete side-effecting or non-side-effecting invocation executed via the Tool Gateway (e.g., crm.update_contact, transfer_funds). In GATE, actions are always governed by policy decisions, budgets, and evidence emission.
 
-**Agent Instance**\
+**Agent Instance**  
 A single execution instance of an agent runtime (often ephemeral) with a unique workload identity. Distinct from "agent version." An instance executes one run or workflow and is attributable and revocable.
 
-**Agent Runtime**\
+**Agent Runtime**  
 The compute environment running the model client and agent logic (planner/executor), including the tools SDK. In GATE, the runtime proposes actions; the control plane authorizes and executes them.
 
-**Allowlist / Denylist**\
+**Allowlist / Denylist**  
 Policy lists defining allowed or forbidden tools, destinations, data sources, or action classes. Allowlists are preferred for high-risk actions.
 
-**Attestation**\
+**Attestation**  
 A cryptographic proof that a workload is running in an expected environment and configuration (e.g., image digest, measured boot values, or TEE attestation). Used by GATE to gate tool/memory access.
 
-**Audit Ledger**\
+**Audit Ledger**  
 A tamper-evident, append-only record of key governance events (policy decisions, tool calls, memory operations). Typically implemented via hash chaining, signatures, and immutable storage retention (WORM).
 
-**Backpressure**\
+**Backpressure**  
 A control-plane mechanism that slows or halts work production when downstream capacity is constrained (rate limits, queue depth signals, budget exhaustion). Essential because agents can generate endogenous load.
 
-**Breaker (Circuit Breaker)**\
+**Breaker (Circuit Breaker)**  
 An automated supervisory control that halts execution when unsafe or abnormal patterns occur (looping, rapid retries, spend velocity spikes, anomalous tool usage). Usually enforced at the Tool Gateway and/or Orchestrator.
 
 **Canonical Serialization**A deterministic representation of structured data used for hashing and signatures (stable ordering, normalized encoding). Required for consistent request_hash/response_hash verification across systems.
 
-**Control (GATE Control)**\
+**Control (GATE Control)**  
 An implementable, verifiable governance mechanism enforced outside the model, e.g., Tool Gateway policy enforcement, verifiable audit ledger, deterministic replay, memory gateway. Controls are composable and independently adoptable.
 
-**Control Plane**\
+**Control Plane**  
 A supervisory layer that manages and constrains system behavior. In GATE, the control plane mediates all tool and memory access, emits evidence, enforces budgets, and gates autonomy based on risk.
 
 **Decision Record (Policy Decision Record)**A structured artifact produced by the policy engine describing allow/deny and obligations for an attempted action, including decision_id, policy bundle hash, request hash, and reason codes.
 
-**Deterministic Replay**\
+**Deterministic Replay**  
 The ability to re-run an agent workflow using recorded traces and snapshots such that tool responses and outcomes reproduce the original behavior. Requires capture of model config, context hashes, tool snapshots, and routing decisions.
 
-**Event Sourcing**\
+**Event Sourcing**  
 A pattern where system state is derived from an append-only sequence of events. GATE replay and ledger mechanisms use event sourcing to reconstruct and validate behavior.
 
-**Evidence**\
+**Evidence**  
 Artifacts that allow independent validation of enforcement and behavior: policy decisions, ledger events, signatures, replay traces, breaker triggers, approval records, and correlation IDs. Evidence must be retained and tamper-resistant according to tier.
 
-**HITL (Human-in-the-Loop)**\
+**HITL (Human-in-the-Loop)**  
 Governance mechanism that requires human approval for specified actions or risk thresholds. Implemented as explicit approval gates with signed decision records linked to policy and ledger evidence.
 
-**HITL Decision Record (Approval Record)**\
+**HITL Decision Record (Approval Record)**  
 A structured artifact proving an approval/denial occurred for an action: approver identity/role, request hash, policy decision reference, ORM score, conditions, signature, and ledger reference.
 
-**Idempotency Key**\
+**Idempotency Key**  
 A stable identifier used to ensure a tool action is executed at most once even if retries occur (prevents duplicate side effects).
 
-**Immutable Storage / WORM (Write Once Read Many)**\
+**Immutable Storage / WORM (Write Once Read Many)**  
 Storage configured so objects cannot be altered or deleted for a retention period. Used for audit logs and replay snapshots to prevent evidence tampering.
 
-**Injection (Prompt Injection / Indirect Injection)**\
+**Injection (Prompt Injection / Indirect Injection)**  
 Techniques that cause an agent to treat untrusted content as instructions. Indirect injection commonly enters via retrieved documents, web pages, or tool outputs.
 
-**Invariant**\
+**Invariant**  
 A rule that must always hold (e.g., "no funds transfer above X," "never delete records," "no external email to non-allowlisted domains"). In GATE, invariants are enforced by policy and optionally formal verification.
 
-**Ledger Integrity Verification**\
+**Ledger Integrity Verification**  
 A process that validates hash chain continuity and signature correctness in the audit ledger, producing integrity reports suitable for audit/forensics.
 
-**Memory Gateway**\
+**Memory Gateway**  
 The control-plane component that governs memory reads/writes (RAG, vector stores, state) using ACL/ABAC, schemas, provenance checks, TTL, and poisoning detection/quarantine.
 
-**Memory Poisoning**\
+**Memory Poisoning**  
 Corruption of memory stores such that future behavior becomes unsafe or incorrect. Can be accidental (bad data) or malicious (injected instructions). GATE mitigates via provenance, validation, and quarantine.
 
-**mTLS (Mutual TLS)**\
+**mTLS (Mutual TLS)**  
 Bidirectional TLS authentication between services. Often used to secure service-to-service communication for GATE components and multi-agent messaging.
 
-**Non-Repudiation**\
+**Non-Repudiation**  
 Cryptographic assurance that an entity performed an action (or approved it) and cannot plausibly deny it later. Achieved with signatures tied to workload identity and retained in immutable evidence.
 
-**Obligation (Policy Obligation)**\
+**Obligation (Policy Obligation)**  
 A required follow-up action attached to a policy decision (e.g., "require HITL," "sign action," "write ledger event," "perform verification"). Obligations must be enforced, not just logged.
 
-**OPA (Open Policy Agent) / Rego**\
+**OPA (Open Policy Agent) / Rego**  
 A common policy engine and language used to express policy-as-code. GATE is policy-engine agnostic but assumes deterministic external policy evaluation.
 
-**Orchestrator**\
+**Orchestrator**  
 The control-plane component responsible for routing, scheduling, retries/backoff, DAG execution, version-aware rollout/rollback, and global backpressure. It coordinates distributed and multi-agent workflows.
 
-**ORM (Operational Risk Modeling)**\
+**ORM (Operational Risk Modeling)**  
 A real-time risk scoring mechanism that consumes signals from GATE controls (policy exceptions, anomaly detection, budget pressure, poisoning signals, divergence, etc.) and adjusts enforcement (auto-execute, require verification, require HITL, block).
 
-**Policy Bundle**\
+**Policy Bundle**  
 A versioned package of policies (e.g., Rego modules) deployed to the Tool Gateway/policy engine. Identified by policy_bundle_hash and referenced in evidence.
 
-**Prompt Bundle**\
+**Prompt Bundle**  
 A versioned package containing system prompts, tool instructions, and configuration. Identified by prompt_bundle_hash. Typically stored securely; logs reference hashes, not plaintext.
 
-**Replay Snapshot**\
+**Replay Snapshot**  
 An immutable capture of external tool responses (and optionally retrieved content) used for deterministic replay. Stored via snapshot pointers (snapshot_uri) and linked to replay traces.
 
-**Risk Tier (Tool Risk Tier)**\
+**Risk Tier (Tool Risk Tier)**  
 A classification for tools/actions (e.g., read-only, reversible write, irreversible write, financial, infrastructure). Used to drive policy, verification, HITL, and non-repudiation requirements.
 
-**Schema Validation (Tool Schema)**\
+**Schema Validation (Tool Schema)**  
 Validation of tool inputs/outputs against versioned schemas to prevent ambiguous or malicious requests (avoids free-text tool calling). Tool schemas are hashed (tool_schema_hash) for evidence and replay.
 
-**Semantic Observability (Semantic Tracing)**\
+**Semantic Observability (Semantic Tracing)**  
 Structured telemetry capturing agent intent and decision categories (not raw chain-of-thought) correlated to policy decisions, tool invocations, ledger events, and replay traces.
 
-**SPIFFE / SPIRE**\
+**SPIFFE / SPIRE**  
 Common standards and implementations for workload identity in distributed systems. Used to assign and verify short-lived identities for agent instances and GATE services.
 
-**Tool Gateway**\
+**Tool Gateway**  
 The enforcement boundary for tool execution. Authenticates identity, validates schemas, evaluates policy, enforces budgets, applies obligations (HITL, verification), signs actions, and emits evidence.
 
-**Tool Category**\
+**Tool Category**  
 A governance classification for tools based on consequence: read-only, reversible write, irreversible write, financial, infrastructure. Determines minimum controls and default policy posture.
 
-**Trace ID / Span ID**\
+**Trace ID / Span ID**  
 Distributed tracing identifiers (commonly OpenTelemetry) used to correlate events across agent runtime, gateways, orchestrator, memory gateway, and downstream tools.
 
-**TTL (Time To Live)**\
+**TTL (Time To Live)**  
 A retention constraint applied to memory records or evidence artifacts. Used to manage privacy, compliance, and poisoning blast radius.
 
-**Zero Trust**\
+**Zero Trust**  
 A security posture where no workload is trusted by network location alone. Every request is authenticated, authorized, and attributable. In GATE, this applies to agent instances and all control-plane boundaries.
 
-# References {.unnumbered}
-
+# References
 European Union (2024) *Regulation (EU) 2024/1689 of the European Parliament and of the Council of 13 June 2024 laying down harmonised rules on artificial intelligence (Artificial Intelligence Act)*. Official Journal of the European Union, L 2024/1689.
 
 Google Cloud (2026) 'How the Open Knowledge Format can improve data sharing'. *Google Cloud Blog*, 12 June. Available at: https://cloud.google.com/blog/products/data-analytics/how-the-open-knowledge-format-can-improve-data-sharing (Accessed: 23 June 2026).
@@ -4833,5 +4808,3 @@ National Institute of Standards and Technology (2023) *Artificial Intelligence R
 
 OWASP (2026) *OWASP AI Security Verification Standard*. Available at: https://owasp.org/www-project-ai-security-verification-standard/ (Accessed: 23 June 2026). Pinned to AISVS v1.0 content at commit `aadf83a77b44cc5c6ee3033affe0d8c538dc3748`.
 
-::: {#refs}
-:::
