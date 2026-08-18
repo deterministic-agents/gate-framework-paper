@@ -1312,66 +1312,65 @@ All hashes and signatures MUST be computed over canonical JSON (stable ordering 
 
 ```
 {
-"schema_version": "v1",
-"event_type": "gate.tool.request",
-"time": "2025-12-24T10:20:00Z",
-
-"run_id": "uuid",
-"trace_id": "otel-trace-id",
-"span_id": "otel-span-id",
-"tenant_id": "tenant-123",
-"environment": "prod",
-
-"agent": {
-"agent_instance_id": "spiffe://org/agent/planner#run-123",
-"agent_name": "planner",
-"agent_version": "2.1.0",
-"identity": {
-"subject": "spiffe://org/agent/planner",
-"attested": true,
-"claims": {
-"image_digest": "sha256:...",
-"config_hash": "sha256:...",
-"toolset_hash": "sha256:..."
-}
-}
-},
-
-"tool": {
-"name": "crm.update_contact",
-"category": "reversible_write",
-"risk_tier": "medium",
-"idempotency_key": "optional-stable-key"
-},
-
-"inputs": {
-"content_type": "application/json",
-"payload": { "contact_id": "123", "email": "new@example.com" }
-},
-
-"bundles": {
-"policy_bundle_hash": "sha256:...",
-"prompt_bundle_hash": "sha256:...",
-"tool_schema_hash": "sha256:..."
-},
-
-"hashes": {
-"request_hash": "sha256:..."
-},
-
-"context": {
-"orm_risk_score": 0.42,
-"budgets": {
-"tokens_remaining": 20000,
-"tool_calls_remaining": 120,
-"cost_usd_remaining": 18.50
-},
-"source_labels": ["user_input", "retrieved_doc"],
-"approval": {
-"required": false,
-"approval_id": null
-}
-}
+  "schema_version": "v1",
+  "event_type": "gate.tool.request",
+  "time": "2025-12-24T10:20:00Z",
+  "run_id": "uuid",
+  "trace_id": "otel-trace-id",
+  "span_id": "otel-span-id",
+  "tenant_id": "tenant-123",
+  "environment": "prod",
+  "agent": {
+    "agent_instance_id": "spiffe://org/agent/planner#run-123",
+    "agent_name": "planner",
+    "agent_version": "2.1.0",
+    "identity": {
+      "subject": "spiffe://org/agent/planner",
+      "attested": true,
+      "claims": {
+        "image_digest": "sha256:...",
+        "config_hash": "sha256:...",
+        "toolset_hash": "sha256:..."
+      }
+    }
+  },
+  "tool": {
+    "name": "crm.update_contact",
+    "category": "reversible_write",
+    "risk_tier": "medium",
+    "idempotency_key": "optional-stable-key"
+  },
+  "inputs": {
+    "content_type": "application/json",
+    "payload": {
+      "contact_id": "123",
+      "email": "new@example.com"
+    }
+  },
+  "bundles": {
+    "policy_bundle_hash": "sha256:...",
+    "prompt_bundle_hash": "sha256:...",
+    "tool_schema_hash": "sha256:..."
+  },
+  "hashes": {
+    "request_hash": "sha256:..."
+  },
+  "context": {
+    "orm_risk_score": 0.42,
+    "budgets": {
+      "tokens_remaining": 20000,
+      "tool_calls_remaining": 120,
+      "cost_usd_remaining": 18.5
+    },
+    "source_labels": [
+      "user_input",
+      "retrieved_doc"
+    ],
+    "approval": {
+      "required": false,
+      "approval_id": null
+    }
+  }
 }
 ```
 
@@ -1448,48 +1447,55 @@ This is the must-have record that makes tool execution defensible.
 
 ```
 {
-"schema_version": "v1",
-"event_type": "gate.policy.decision",
-"time": "2025-12-24T10:20:00Z",
-
-"decision_id": "uuid",
-"run_id": "uuid",
-"trace_id": "otel-trace-id",
-"tenant_id": "tenant-123",
-"environment": "prod", "control_plane_version": "v1.3",
-
-"subject": {
-"agent_instance_id": "spiffe://org/agent/planner#run-123",
-"subject_id": "spiffe://org/agent/planner",
-"attested": true
-},
-
-"action": {
-"type": "tool.invoke",
-"tool_name": "crm.update_contact",
-"tool_category": "reversible_write",
-"risk_tier": "medium"
-},
-
-"inputs": {
-"request_hash": "sha256:...",
-"context_hash": "sha256:..."
-},
-
-"bundles": {
-"policy_bundle_hash": "sha256:...",
-"tool_schema_hash": "sha256:..."
-},
-
-"result": {
-"decision": "allow",
-"reason_codes": ["ALLOWLIST_MATCH", "BUDGET_OK"],
-"obligations": [
-{ "type": "audit_log", "required": true },
-{ "type": "sign_action", "required": true },
-{ "type": "hitl_approval", "required": false }
-]
-}
+  "schema_version": "v1",
+  "event_type": "gate.policy.decision",
+  "time": "2025-12-24T10:20:00Z",
+  "decision_id": "uuid",
+  "run_id": "uuid",
+  "trace_id": "otel-trace-id",
+  "tenant_id": "tenant-123",
+  "environment": "prod",
+  "control_plane_version": "v1.3",
+  "subject": {
+    "agent_instance_id": "spiffe://org/agent/planner#run-123",
+    "subject_id": "spiffe://org/agent/planner",
+    "attested": true
+  },
+  "action": {
+    "type": "tool.invoke",
+    "tool_name": "crm.update_contact",
+    "tool_category": "reversible_write",
+    "risk_tier": "medium"
+  },
+  "inputs": {
+    "request_hash": "sha256:...",
+    "context_hash": "sha256:..."
+  },
+  "bundles": {
+    "policy_bundle_hash": "sha256:...",
+    "tool_schema_hash": "sha256:..."
+  },
+  "result": {
+    "decision": "allow",
+    "reason_codes": [
+      "ALLOWLIST_MATCH",
+      "BUDGET_OK"
+    ],
+    "obligations": [
+      {
+        "type": "audit_log",
+        "required": true
+      },
+      {
+        "type": "sign_action",
+        "required": true
+      },
+      {
+        "type": "hitl_approval",
+        "required": false
+      }
+    ]
+  }
 }
 ```
 
@@ -1501,36 +1507,31 @@ Ledger events provide integrity. They should be append-only and verifiable.
 
 ```
 {
-"schema_version": "v1",
-"event_type": "gate.ledger.event",
-"time": "2025-12-24T10:20:01Z",
-
-"ledger_event_id": "uuid",
-"run_id": "uuid",
-"tenant_id": "tenant-123",
-"environment": "prod",
-
-"references": {
-"trace_id": "otel-trace-id",
-"policy_decision_id": "uuid",
-"tool_request_hash": "sha256:...",
-"tool_response_hash": "sha256:..."
-},
-
-"hash_chain": {
-"prev_event_hash": "sha256:...",
-"event_hash": "sha256:..."
-},
-
-"signatures": {
-"signing_key_id": "kid-123",
-"signature": "base64..."
-},
-
-"immutability": {
-"sink_uri": "worm://audit/2025/12/24/...",
-"retention_class": "tier_bounded_365d"
-}
+  "schema_version": "v1",
+  "event_type": "gate.ledger.event",
+  "time": "2025-12-24T10:20:01Z",
+  "ledger_event_id": "uuid",
+  "run_id": "uuid",
+  "tenant_id": "tenant-123",
+  "environment": "prod",
+  "references": {
+    "trace_id": "otel-trace-id",
+    "policy_decision_id": "uuid",
+    "tool_request_hash": "sha256:...",
+    "tool_response_hash": "sha256:..."
+  },
+  "hash_chain": {
+    "prev_event_hash": "sha256:...",
+    "event_hash": "sha256:..."
+  },
+  "signatures": {
+    "signing_key_id": "kid-123",
+    "signature": "base64..."
+  },
+  "immutability": {
+    "sink_uri": "worm://audit/2025/12/24/...",
+    "retention_class": "tier_bounded_365d"
+  }
 }
 ```
 
@@ -1578,44 +1579,45 @@ output_hash: "sha256:..."
 
 ```
 {
-"schema_version": "v1",
-"event_type": "gate.agent.message",
-"time": "2025-12-24T10:25:00Z",
-
-"run_id": "uuid",
-"trace_id": "otel-trace-id",
-"tenant_id": "tenant-123",
-
-"protocol": {
-"version": "1.0",
-"capabilities": ["delegate_task", "return_result"],
-"nonce": "random-unique-nonce",
-"expires_at": "2025-12-24T10:26:00Z"
-},
-
-"sender": {
-"agent_instance_id": "spiffe://org/agent/planner#run-123",
-"subject_id": "spiffe://org/agent/planner"
-},
-
-"recipient": {
-"subject_id": "spiffe://org/agent/executor"
-},
-
-"payload": {
-"type": "delegate_task",
-"task_id": "uuid",
-"inputs": { "tool": "crm.update_contact", "args": { "contact_id": "123" } }
-},
-
-"hashes": {
-"payload_hash": "sha256:..."
-},
-
-"signature": {
-"key_id": "kid-456",
-"sig": "base64..."
-}
+  "schema_version": "v1",
+  "event_type": "gate.agent.message",
+  "time": "2025-12-24T10:25:00Z",
+  "run_id": "uuid",
+  "trace_id": "otel-trace-id",
+  "tenant_id": "tenant-123",
+  "protocol": {
+    "version": "1.0",
+    "capabilities": [
+      "delegate_task",
+      "return_result"
+    ],
+    "nonce": "random-unique-nonce",
+    "expires_at": "2025-12-24T10:26:00Z"
+  },
+  "sender": {
+    "agent_instance_id": "spiffe://org/agent/planner#run-123",
+    "subject_id": "spiffe://org/agent/planner"
+  },
+  "recipient": {
+    "subject_id": "spiffe://org/agent/executor"
+  },
+  "payload": {
+    "type": "delegate_task",
+    "task_id": "uuid",
+    "inputs": {
+      "tool": "crm.update_contact",
+      "args": {
+        "contact_id": "123"
+      }
+    }
+  },
+  "hashes": {
+    "payload_hash": "sha256:..."
+  },
+  "signature": {
+    "key_id": "kid-456",
+    "sig": "base64..."
+  }
 }
 ```
 
@@ -3949,8 +3951,6 @@ required_controls: ["C05", "C11", "C09"]
 side_effecting: true
 required_controls: ["C05", "C11", "C12", "C06"]
 ```
-|                                                                       |
-+=======================================================================+
 
 ## Artifact A2 - Tool Authorization Matrix
 
@@ -3984,13 +3984,17 @@ input.amount_usd > 500
 
 ```
 {
-"version": "v1",
-"sender_id": "spiffe://org/agent/planner",
-"timestamp": "2025-12-24T10:20:00Z",
-"nonce": "random-unique",
-"payload": { "type": "delegate_task", "task_id": "uuid", "inputs": {} },
-"payload_hash": "sha256:...",
-"signature": "sig:..."
+  "version": "v1",
+  "sender_id": "spiffe://org/agent/planner",
+  "timestamp": "2025-12-24T10:20:00Z",
+  "nonce": "random-unique",
+  "payload": {
+    "type": "delegate_task",
+    "task_id": "uuid",
+    "inputs": {}
+  },
+  "payload_hash": "sha256:...",
+  "signature": "sig:..."
 }
 ```
 
@@ -3998,15 +4002,24 @@ input.amount_usd > 500
 
 ```
 {
-"event_type": "gate.tool_call",
-"time": "2025-12-24T10:20:00Z",
-"agent_instance_id": "spiffe://org/agent/x#run-123",
-"trace_id": "trace-abc",
-"intent": "Update CRM contact email",
-"tool": { "name": "crm.update_contact", "args_hash": "sha256:..." },
-"policy": { "decision": "allow", "policy_hash": "sha256:..." },
-"orm": { "risk": 0.42, "band": "medium" },
-"audit_ref": "ledger_event_id"
+  "event_type": "gate.tool_call",
+  "time": "2025-12-24T10:20:00Z",
+  "agent_instance_id": "spiffe://org/agent/x#run-123",
+  "trace_id": "trace-abc",
+  "intent": "Update CRM contact email",
+  "tool": {
+    "name": "crm.update_contact",
+    "args_hash": "sha256:..."
+  },
+  "policy": {
+    "decision": "allow",
+    "policy_hash": "sha256:..."
+  },
+  "orm": {
+    "risk": 0.42,
+    "band": "medium"
+  },
+  "audit_ref": "ledger_event_id"
 }
 ```
 

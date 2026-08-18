@@ -62,9 +62,24 @@ def unescape(text: str) -> str:
     return re.sub(r'\\([^\w\s\\])', r'\1', text)
 
 
+def try_reindent_json(cells):
+    """If the joined content parses as JSON, return it pretty-printed;
+    the docx migration flattened all code indentation."""
+    import json
+    joined = '\n'.join(cells)
+    if not joined.lstrip().startswith('{'):
+        return None
+    try:
+        return json.dumps(json.loads(joined), indent=2).split('\n')
+    except Exception:
+        return None
+
+
 def convert_grid_blocks(seg: str) -> str:
     """Single-column pandoc grid tables: prose callouts (bold first line)
-    become blockquotes; anything else becomes a fenced code block."""
+    become blockquotes; anything else becomes a fenced code block. A grid
+    block is the full chain of border lines and pipe rows (multi-row grids
+    have interior borders)."""
     lines = seg.split('\n')
     out, i = [], 0
     while i < len(lines):
@@ -72,10 +87,14 @@ def convert_grid_blocks(seg: str) -> str:
             out.append(lines[i]); i += 1
             continue
         j = i + 1
-        while j < len(lines) and not GRID_BORDER.match(lines[j]):
+        borders = 1
+        while j < len(lines) and (GRID_BORDER.match(lines[j])
+                                  or lines[j].lstrip().startswith('|')):
+            if GRID_BORDER.match(lines[j]):
+                borders += 1
             j += 1
-        if j >= len(lines):
-            out.append(lines[i]); i += 1
+        if borders < 2:
+            i += 1
             continue
         rows = [l for l in lines[i + 1:j] if l.lstrip().startswith('|')]
         cells = []
@@ -91,8 +110,8 @@ def convert_grid_blocks(seg: str) -> str:
         if cells and cells[0].startswith('**'):
             out += ['> ' + c if c else '>' for c in cells]
         else:
-            out += ['```'] + cells + ['```']
-        i = j + 1
+            out += ['```'] + (try_reindent_json(cells) or cells) + ['```']
+        i = j
     return '\n'.join(out)
 
 
@@ -145,7 +164,7 @@ def convert_multiline_tables(seg: str) -> str:
                 body.pop(0)
             while body and not body[-1].strip():
                 body.pop()
-            out += ['```'] + body + ['```']
+            out += ['```'] + (try_reindent_json(body) or body) + ['```']
         else:
             spans = ruler_spans(block[ruler_idx])
             header_lines = [l for l in block[:ruler_idx] if l.strip()]
