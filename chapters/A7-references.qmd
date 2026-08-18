@@ -2,7 +2,7 @@
 
 European Union (2024) *Regulation (EU) 2024/1689 of the European Parliament and of the Council of 13 June 2024 laying down harmonised rules on artificial intelligence (Artificial Intelligence Act)*. Official Journal of the European Union, L 2024/1689.
 
-Google Cloud (2026) 'How the Open Knowledge Format can improve data sharing'. *Google Cloud Blog*, 12 June. Available at: https://cloud.google.com/blog/products/data-analytics/how-the-open-knowledge-format-can-improve-data-sharing (Accessed: 23 June 2026).
+McVeety, S. and Hormati, A. (2026) 'How the Open Knowledge Format can improve data sharing'. *Google Cloud Blog*, 12 June. Available at: https://cloud.google.com/blog/products/data-analytics/how-the-open-knowledge-format-can-improve-data-sharing (Accessed: 18 August 2026).
 
 International Organization for Standardization (2023) *ISO/IEC 42001: Information technology - Artificial intelligence - Management system*. ISO/IEC.
 
@@ -12,7 +12,7 @@ National Institute of Standards and Technology (2022) *NIST Special Publication 
 
 National Institute of Standards and Technology (2023) *Artificial Intelligence Risk Management Framework (AI RMF 1.0)*. Available at: https://www.nist.gov/itl/ai-risk-management-framework (Accessed: 16 June 2026).
 
-OWASP (2026) *OWASP AI Security Verification Standard*. Available at: https://owasp.org/www-project-ai-security-verification-standard/ (Accessed: 23 June 2026). Pinned to AISVS v1.0 content at commit `aadf83a77b44cc5c6ee3033affe0d8c538dc3748`.
+OWASP (2026) *Artificial Intelligence Security Verification Standard (AISVS) 1.0*. Available at: https://owasp.org/www-project-artificial-intelligence-security-verification-standard-aisvs-docs/ (Accessed: 18 August 2026). Pinned to AISVS v1.0 content at commit `aadf83a77b44cc5c6ee3033affe0d8c538dc3748`.
 
 ::: {#refs}
 :::
