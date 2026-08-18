@@ -122,7 +122,7 @@ The artifacts bundle is renamed from `GATE-artifacts-v1.2.zip` to `GATE-artifact
 
 ## Changes since v1.2.8
 
-v1.3 expands GATE\'s scope in three deliberate directions. The previous version assumed the population of agents was known, the retrieved content was usable, and the underlying model was stable across time. None of those assumptions is safe in production. v1.3 makes the first explicit as a scope statement and adds dedicated controls for the second and third.
+v1.3 expands GATE's scope in three deliberate directions. The previous version assumed the population of agents was known, the retrieved content was usable, and the underlying model was stable across time. None of those assumptions is safe in production. v1.3 makes the first explicit as a scope statement and adds dedicated controls for the second and third.
 
 The existing 16 controls are unchanged in number, layer placement, and intent. Three additions modify them only at the edges: C04 gains a Discovered lifecycle state to receive C17 candidates, C08 carries a Failure-Modes cross-reference to C18 and the Memory flow scope note, and C10 carries a single clarifying sentence on the Determinism scope. The numbering of C01-C16 is preserved.
 
@@ -204,17 +204,15 @@ Recommended migration order from v1.2.8
 
 Agentic AI is crossing from "assistive" software into systems that plan and execute actions across enterprise tools. When an AI system can take real-world actions, the primary production constraint becomes trust, not model capability.
 
-+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| **A note on the word \"deterministic\"**                                                                                                                                                                                                                                                                           |
-|                                                                                                                                                                                                                                                                                                                    |
-| GATE uses \"deterministic\" to describe the control plane boundaries that surround the agent - not the model itself.                                                                                                                                                                                               |
-|                                                                                                                                                                                                                                                                                                                    |
-| LLMs are inherently probabilistic; GATE does not change that. What GATE enforces is operational determinism at the tool and memory boundary: every action that can cause a side effect passes through enforcement points that authenticate, authorize, constrain, and record it in a verifiable, reproducible way. |
-|                                                                                                                                                                                                                                                                                                                    |
-| The model *proposes*; the control plane *decides*.                                                                                                                                                                                                                                                                 |
-|                                                                                                                                                                                                                                                                                                                    |
-| That separation is what makes the framework trustworthy - not an assertion that the model\'s token generation is predictable.                                                                                                                                                                                      |
-+====================================================================================================================================================================================================================================================================================================================+
+> **A note on the word "deterministic"**
+>
+> GATE uses "deterministic" to describe the control plane boundaries that surround the agent - not the model itself.
+>
+> LLMs are inherently probabilistic; GATE does not change that. What GATE enforces is operational determinism at the tool and memory boundary: every action that can cause a side effect passes through enforcement points that authenticate, authorize, constrain, and record it in a verifiable, reproducible way.
+>
+> The model *proposes*; the control plane *decides*.
+>
+> That separation is what makes the framework trustworthy - not an assertion that the model's token generation is predictable.
 
 The core challenge is architectural: models are probabilistic, can be influenced by adversarial inputs, and are inherently non-deterministic. Enterprises cannot safely rely on prompt-only guardrails. Trust must be engineered into the surrounding platform with controls that are deterministic, enforceable, and auditable outside the model.
 
@@ -1038,9 +1036,9 @@ A control's Why MUST include the following:
 ### Template (normative)
 
 Why:  
-Without this control, an agent can \<failure mode\> via \<attack path\>, resulting in \<impact\>.  
-Prompt-based constraints and conventional application logging fail because \<reason\>.  
-This control reduces risk by enforcing \<deterministic condition\> at the \<boundary\>.
+Without this control, an agent can <failure mode> via <attack path>, resulting in <impact>.  
+Prompt-based constraints and conventional application logging fail because <reason>.  
+This control reduces risk by enforcing <deterministic condition> at the <boundary>.
 
 #### Examples (conformant)
 
@@ -1075,9 +1073,9 @@ A control's What MUST describe an enforceable mechanism:
 ### Template (normative)
 
 What:  
-This control is implemented as \<service/mechanism\> at the \<boundary\>.  
-It consumes \<inputs\> and enforces \<invariants\> by producing \<decisions/actions\>.  
-It emits \<outputs\> that are linked to \<correlation IDs\> for audit and replay.
+This control is implemented as <service/mechanism> at the <boundary>.  
+It consumes <inputs> and enforces <invariants> by producing <decisions/actions>.  
+It emits <outputs> that are linked to <correlation IDs> for audit and replay.
 
 ### Required invariants (recommended baseline; tiered requirement)
 
@@ -1155,10 +1153,10 @@ Write How in four subsections:
 ### Template (normative)
 
 How:  
-Flow: \<list the enforcement steps at runtime\>.  
-Deployment: \<where it runs, how it intercepts\>.  
-Rollout: \<safe introduction strategy\>.  
-Testing: \<how to prove it works and remains working\>.
+Flow: <list the enforcement steps at runtime>.  
+Deployment: <where it runs, how it intercepts>.  
+Rollout: <safe introduction strategy>.  
+Testing: <how to prove it works and remains working>.
 
 ## EVIDENCE: Specify audit artifacts, retention, and correlation
 
@@ -1193,9 +1191,9 @@ For any action that can cause side effects, the evidence set SHOULD include:
 #### Template (normative)
 
 Evidence:  
-Emit \<events\> with \<IDs\> and cryptographic linkage (\<hashes/signatures\>).  
-Store in \<immutable sink\> for \<retention period/profile\>.  
-Provide \<integrity verification\> and \<dashboards/queries\> to support incident response and audits.
+Emit <events> with <IDs> and cryptographic linkage (<hashes/signatures>).  
+Store in <immutable sink> for <retention period/profile>.  
+Provide <integrity verification> and <dashboards/queries> to support incident response and audits.
 
 ## FAILURE MODES: Document the foot-guns and bypasses
 
@@ -1216,11 +1214,11 @@ Failure modes MUST be written as specific, observable weaknesses:
 ### Template (normative)
 
 Failure Modes:  
-Bypass: \<how the control is bypassed\>.  
-Mis-scope: \<permissions too wide / wrong boundary\>.  
-Non-enforcement: \<observe-only left enabled / obligations ignored\>.  
-Evidence gaps: \<missing linkage or retention\>.  
-Operational drift: \<versioning and rollout failures\>.
+Bypass: <how the control is bypassed>.  
+Mis-scope: <permissions too wide / wrong boundary>.  
+Non-enforcement: <observe-only left enabled / obligations ignored>.  
+Evidence gaps: <missing linkage or retention>.  
+Operational drift: <versioning and rollout failures>.
 
 ### Example failure modes (common)
 
@@ -1288,7 +1286,7 @@ Required identifiers (every contract event MUST include)
 
 - tenant_id - required for multi-tenant deployments
 
-- environment - dev\|test\|prod
+- environment - dev|test|prod
 
 - control_plane_version - version of GATE gateway/policy bundle
 
@@ -1312,118 +1310,115 @@ All hashes and signatures MUST be computed over canonical JSON (stable ordering 
 
 **ToolRequestEnvelope (JSON)**
 
-  ---------------------------------------------------------------------------
-  {  
-  \"schema_version\": \"v1\",  
-  \"event_type\": \"gate.tool.request\",  
-  \"time\": \"2025-12-24T10:20:00Z\",  
-    
-  \"run_id\": \"uuid\",  
-  \"trace_id\": \"otel-trace-id\",  
-  \"span_id\": \"otel-span-id\",  
-  \"tenant_id\": \"tenant-123\",  
-  \"environment\": \"prod\",  
-    
-  \"agent\": {  
-  \"agent_instance_id\": \"spiffe://org/agent/planner#run-123\",  
-  \"agent_name\": \"planner\",  
-  \"agent_version\": \"2.1.0\",  
-  \"identity\": {  
-  \"subject\": \"spiffe://org/agent/planner\",  
-  \"attested\": true,  
-  \"claims\": {  
-  \"image_digest\": \"sha256:\...\",  
-  \"config_hash\": \"sha256:\...\",  
-  \"toolset_hash\": \"sha256:\...\"  
-  }  
-  }  
-  },  
-    
-  \"tool\": {  
-  \"name\": \"crm.update_contact\",  
-  \"category\": \"reversible_write\",  
-  \"risk_tier\": \"medium\",  
-  \"idempotency_key\": \"optional-stable-key\"  
-  },  
-    
-  \"inputs\": {  
-  \"content_type\": \"application/json\",  
-  \"payload\": { \"contact_id\": \"123\", \"email\": \"new@example.com\" }  
-  },  
-    
-  \"bundles\": {  
-  \"policy_bundle_hash\": \"sha256:\...\",  
-  \"prompt_bundle_hash\": \"sha256:\...\",  
-  \"tool_schema_hash\": \"sha256:\...\"  
-  },  
-    
-  \"hashes\": {  
-  \"request_hash\": \"sha256:\...\"  
-  },  
-    
-  \"context\": {  
-  \"orm_risk_score\": 0.42,  
-  \"budgets\": {  
-  \"tokens_remaining\": 20000,  
-  \"tool_calls_remaining\": 120,  
-  \"cost_usd_remaining\": 18.50  
-  },  
-  \"source_labels\": \[\"user_input\", \"retrieved_doc\"\],  
-  \"approval\": {  
-  \"required\": false,  
-  \"approval_id\": null  
-  }  
-  }  
-  }
-  ---------------------------------------------------------------------------
+```
+{
+"schema_version": "v1",
+"event_type": "gate.tool.request",
+"time": "2025-12-24T10:20:00Z",
 
-  ---------------------------------------------------------------------------
+"run_id": "uuid",
+"trace_id": "otel-trace-id",
+"span_id": "otel-span-id",
+"tenant_id": "tenant-123",
+"environment": "prod",
 
+"agent": {
+"agent_instance_id": "spiffe://org/agent/planner#run-123",
+"agent_name": "planner",
+"agent_version": "2.1.0",
+"identity": {
+"subject": "spiffe://org/agent/planner",
+"attested": true,
+"claims": {
+"image_digest": "sha256:...",
+"config_hash": "sha256:...",
+"toolset_hash": "sha256:..."
+}
+}
+},
+
+"tool": {
+"name": "crm.update_contact",
+"category": "reversible_write",
+"risk_tier": "medium",
+"idempotency_key": "optional-stable-key"
+},
+
+"inputs": {
+"content_type": "application/json",
+"payload": { "contact_id": "123", "email": "new@example.com" }
+},
+
+"bundles": {
+"policy_bundle_hash": "sha256:...",
+"prompt_bundle_hash": "sha256:...",
+"tool_schema_hash": "sha256:..."
+},
+
+"hashes": {
+"request_hash": "sha256:..."
+},
+
+"context": {
+"orm_risk_score": 0.42,
+"budgets": {
+"tokens_remaining": 20000,
+"tool_calls_remaining": 120,
+"cost_usd_remaining": 18.50
+},
+"source_labels": ["user_input", "retrieved_doc"],
+"approval": {
+"required": false,
+"approval_id": null
+}
+}
+}
+```
+
+```
 **ToolResponseEnvelope (JSON)**
-
-  ----------------------------------------------------------------------------
+```
   {  
-  \"schema_version\": \"v1\",  
-  \"event_type\": \"gate.tool.response\",  
-  \"time\": \"2025-12-24T10:20:01Z\",  
+  "schema_version": "v1",  
+  "event_type": "gate.tool.response",  
+  "time": "2025-12-24T10:20:01Z",  
     
-  \"run_id\": \"uuid\",  
-  \"trace_id\": \"otel-trace-id\",  
-  \"span_id\": \"otel-span-id\",  
-  \"tenant_id\": \"tenant-123\",  
-  \"environment\": \"prod\",  
+  "run_id": "uuid",  
+  "trace_id": "otel-trace-id",  
+  "span_id": "otel-span-id",  
+  "tenant_id": "tenant-123",  
+  "environment": "prod",  
     
-  \"tool\": {  
-  \"name\": \"crm.update_contact\",  
-  \"status\": \"success\",  
-  \"duration_ms\": 312  
+  "tool": {  
+  "name": "crm.update_contact",  
+  "status": "success",  
+  "duration_ms": 312  
   },  
     
-  \"outputs\": {  
-  \"content_type\": \"application/json\",  
-  \"payload_redacted\": { \"updated\": true },  
-  \"snapshot_uri\": \"immutable://snapshots/tool/crm.update_contact/\....\"  
+  "outputs": {  
+  "content_type": "application/json",  
+  "payload_redacted": { "updated": true },  
+  "snapshot_uri": "immutable://snapshots/tool/crm.update_contact/...."  
   },  
     
-  \"hashes\": {  
-  \"response_hash\": \"sha256:\...\"  
+  "hashes": {  
+  "response_hash": "sha256:..."  
   },  
     
-  \"policy\": {  
-  \"decision_id\": \"uuid\",  
-  \"decision\": \"allow\",  
-  \"obligations\": \[\"log\", \"sign_action\"\],  
-  \"policy_bundle_hash\": \"sha256:\...\"  
+  "policy": {  
+  "decision_id": "uuid",  
+  "decision": "allow",  
+  "obligations": ["log", "sign_action"],  
+  "policy_bundle_hash": "sha256:..."  
   },  
     
-  \"evidence\": {  
-  \"ledger_event_id\": \"ledger-evt-\...\",  
-  \"replay_trace_step_id\": \"trace-step-\...\"  
+  "evidence": {  
+  "ledger_event_id": "ledger-evt-...",  
+  "replay_trace_step_id": "trace-step-..."  
   }  
   }
-  ----------------------------------------------------------------------------
-
-  ----------------------------------------------------------------------------
+```
+```
 
 ### Sensitive Payload Handling (Pointers + Protected Payload Store)
 
@@ -1439,9 +1434,9 @@ Pattern
 
 Minimum contract shape
 
-- payload_hash: sha256:\<canonical\>
+- payload_hash: sha256:<canonical>
 
-- payload_ref: { \"uri\": \"\...\", \"encryption\": \"kms:\<key-id\>\", \"classification\": \"confidential\|regulated\", \"expires_at\": \"\...\" }
+- payload_ref: { "uri": "...", "encryption": "kms:<key-id>", "classification": "confidential|regulated", "expires_at": "..." }
 
 Access to payload refs MUST be restricted to approved operators and incident workflows and must be logged.
 
@@ -1451,54 +1446,52 @@ This is the must-have record that makes tool execution defensible.
 
 **PolicyDecisionRecord (JSON)**
 
-  --------------------------------------------------------------------
-  {  
-  \"schema_version\": \"v1\",  
-  \"event_type\": \"gate.policy.decision\",  
-  \"time\": \"2025-12-24T10:20:00Z\",  
-    
-  \"decision_id\": \"uuid\",  
-  \"run_id\": \"uuid\",  
-  \"trace_id\": \"otel-trace-id\",  
-  \"tenant_id\": \"tenant-123\",  
-  \"environment\": \"prod\", \"control_plane_version\": \"v1.3\",  
-    
-  \"subject\": {  
-  \"agent_instance_id\": \"spiffe://org/agent/planner#run-123\",  
-  \"subject_id\": \"spiffe://org/agent/planner\",  
-  \"attested\": true  
-  },  
-    
-  \"action\": {  
-  \"type\": \"tool.invoke\",  
-  \"tool_name\": \"crm.update_contact\",  
-  \"tool_category\": \"reversible_write\",  
-  \"risk_tier\": \"medium\"  
-  },  
-    
-  \"inputs\": {  
-  \"request_hash\": \"sha256:\...\",  
-  \"context_hash\": \"sha256:\...\"  
-  },  
-    
-  \"bundles\": {  
-  \"policy_bundle_hash\": \"sha256:\...\",  
-  \"tool_schema_hash\": \"sha256:\...\"  
-  },  
-    
-  \"result\": {  
-  \"decision\": \"allow\",  
-  \"reason_codes\": \[\"ALLOWLIST_MATCH\", \"BUDGET_OK\"\],  
-  \"obligations\": \[  
-  { \"type\": \"audit_log\", \"required\": true },  
-  { \"type\": \"sign_action\", \"required\": true },  
-  { \"type\": \"hitl_approval\", \"required\": false }  
-  \]  
-  }  
-  }
-  --------------------------------------------------------------------
+```
+{
+"schema_version": "v1",
+"event_type": "gate.policy.decision",
+"time": "2025-12-24T10:20:00Z",
 
-  --------------------------------------------------------------------
+"decision_id": "uuid",
+"run_id": "uuid",
+"trace_id": "otel-trace-id",
+"tenant_id": "tenant-123",
+"environment": "prod", "control_plane_version": "v1.3",
+
+"subject": {
+"agent_instance_id": "spiffe://org/agent/planner#run-123",
+"subject_id": "spiffe://org/agent/planner",
+"attested": true
+},
+
+"action": {
+"type": "tool.invoke",
+"tool_name": "crm.update_contact",
+"tool_category": "reversible_write",
+"risk_tier": "medium"
+},
+
+"inputs": {
+"request_hash": "sha256:...",
+"context_hash": "sha256:..."
+},
+
+"bundles": {
+"policy_bundle_hash": "sha256:...",
+"tool_schema_hash": "sha256:..."
+},
+
+"result": {
+"decision": "allow",
+"reason_codes": ["ALLOWLIST_MATCH", "BUDGET_OK"],
+"obligations": [
+{ "type": "audit_log", "required": true },
+{ "type": "sign_action", "required": true },
+{ "type": "hitl_approval", "required": false }
+]
+}
+}
+```
 
 ## Audit Ledger Event Schema (Hash-chained, Tamper-evident)
 
@@ -1506,42 +1499,40 @@ Ledger events provide integrity. They should be append-only and verifiable.
 
 **LedgerEvent (JSON)**
 
-  --------------------------------------------------------------------
-  {  
-  \"schema_version\": \"v1\",  
-  \"event_type\": \"gate.ledger.event\",  
-  \"time\": \"2025-12-24T10:20:01Z\",  
-    
-  \"ledger_event_id\": \"uuid\",  
-  \"run_id\": \"uuid\",  
-  \"tenant_id\": \"tenant-123\",  
-  \"environment\": \"prod\",  
-    
-  \"references\": {  
-  \"trace_id\": \"otel-trace-id\",  
-  \"policy_decision_id\": \"uuid\",  
-  \"tool_request_hash\": \"sha256:\...\",  
-  \"tool_response_hash\": \"sha256:\...\"  
-  },  
-    
-  \"hash_chain\": {  
-  \"prev_event_hash\": \"sha256:\...\",  
-  \"event_hash\": \"sha256:\...\"  
-  },  
-    
-  \"signatures\": {  
-  \"signing_key_id\": \"kid-123\",  
-  \"signature\": \"base64\...\"  
-  },  
-    
-  \"immutability\": {  
-  \"sink_uri\": \"worm://audit/2025/12/24/\...\",  
-  \"retention_class\": \"tier_bounded_365d\"  
-  }  
-  }
-  --------------------------------------------------------------------
+```
+{
+"schema_version": "v1",
+"event_type": "gate.ledger.event",
+"time": "2025-12-24T10:20:01Z",
 
-  --------------------------------------------------------------------
+"ledger_event_id": "uuid",
+"run_id": "uuid",
+"tenant_id": "tenant-123",
+"environment": "prod",
+
+"references": {
+"trace_id": "otel-trace-id",
+"policy_decision_id": "uuid",
+"tool_request_hash": "sha256:...",
+"tool_response_hash": "sha256:..."
+},
+
+"hash_chain": {
+"prev_event_hash": "sha256:...",
+"event_hash": "sha256:..."
+},
+
+"signatures": {
+"signing_key_id": "kid-123",
+"signature": "base64..."
+},
+
+"immutability": {
+"sink_uri": "worm://audit/2025/12/24/...",
+"retention_class": "tier_bounded_365d"
+}
+}
+```
 
 ## Replay Trace Schema (Deterministic Replay)
 
@@ -1549,121 +1540,115 @@ Replay traces capture non-determinism and snapshot pointers.
 
 **ReplayTrace (YAML)**
 
-  ----------------------------------------------------------------------------------------------------------------------------------------
-  schema_version: v1trace_id: trace-abcrun_id: uuidtenant_id: tenant-123  
-  environment: prod  
-    
-  agent:  
-  agent_instance_id: \"spiffe://org/agent/planner#run-123\"  
-  agent_name: planner  
-  agent_version: 2.1.0  
-    
-  model:  
-  model_id: provider/model  
-  model_version: \"2025-11-01\"  
-  temperature: 0.2  
-  seed: 123456  
-  decoding: \"greedy_or_sampled\"  
-    
-  bundles:  
-  prompt_bundle_hash: \"sha256:\...\" policy_bundle_hash: \"sha256:\...\" tool_schema_hash: \"sha256:\...\"  
-    
-  steps:  
-  - step_index: 1 step_type: \"retrieve_context\"  
-  retrieved_context_hashes: \[\"sha256:doc1\", \"sha256:doc2\"\]  
-  provenance_refs: \[\"prov://doc1\", \"prov://doc2\"\]  
-    
-  - step_index: 2 step_type: \"tool_call\"  
-  tool_name: \"crm.update_contact\" request_hash: \"sha256:\...\" response_hash: \"sha256:\...\"  
-  response_snapshot_uri: \"immutable://snapshots/tool/crm.update_contact/\....\" policy_decision_id: \"uuid\" ledger_event_id: \"uuid\"  
-    
-  - step_index: 3 step_type: \"final_output\"  
-  output_hash: \"sha256:\...\"
-  ----------------------------------------------------------------------------------------------------------------------------------------
+```
+schema_version: v1trace_id: trace-abcrun_id: uuidtenant_id: tenant-123
+environment: prod
 
-  ----------------------------------------------------------------------------------------------------------------------------------------
+agent:
+agent_instance_id: "spiffe://org/agent/planner#run-123"
+agent_name: planner
+agent_version: 2.1.0
+
+model:
+model_id: provider/model
+model_version: "2025-11-01"
+temperature: 0.2
+seed: 123456
+decoding: "greedy_or_sampled"
+
+bundles:
+prompt_bundle_hash: "sha256:..." policy_bundle_hash: "sha256:..." tool_schema_hash: "sha256:..."
+
+steps:
+- step_index: 1 step_type: "retrieve_context"
+retrieved_context_hashes: ["sha256:doc1", "sha256:doc2"]
+provenance_refs: ["prov://doc1", "prov://doc2"]
+
+- step_index: 2 step_type: "tool_call"
+tool_name: "crm.update_contact" request_hash: "sha256:..." response_hash: "sha256:..."
+response_snapshot_uri: "immutable://snapshots/tool/crm.update_contact/...." policy_decision_id: "uuid" ledger_event_id: "uuid"
+
+- step_index: 3 step_type: "final_output"
+output_hash: "sha256:..."
+```
 
 ## Multi-Agent Protocol Envelope (Signed, Versioned, Nonce-protected)
 
 **AgentMessageEnvelope (JSON)**
 
-  ------------------------------------------------------------------------------------------
-  {  
-  \"schema_version\": \"v1\",  
-  \"event_type\": \"gate.agent.message\",  
-  \"time\": \"2025-12-24T10:25:00Z\",  
-    
-  \"run_id\": \"uuid\",  
-  \"trace_id\": \"otel-trace-id\",  
-  \"tenant_id\": \"tenant-123\",  
-    
-  \"protocol\": {  
-  \"version\": \"1.0\",  
-  \"capabilities\": \[\"delegate_task\", \"return_result\"\],  
-  \"nonce\": \"random-unique-nonce\",  
-  \"expires_at\": \"2025-12-24T10:26:00Z\"  
-  },  
-    
-  \"sender\": {  
-  \"agent_instance_id\": \"spiffe://org/agent/planner#run-123\",  
-  \"subject_id\": \"spiffe://org/agent/planner\"  
-  },  
-    
-  \"recipient\": {  
-  \"subject_id\": \"spiffe://org/agent/executor\"  
-  },  
-    
-  \"payload\": {  
-  \"type\": \"delegate_task\",  
-  \"task_id\": \"uuid\",  
-  \"inputs\": { \"tool\": \"crm.update_contact\", \"args\": { \"contact_id\": \"123\" } }  
-  },  
-    
-  \"hashes\": {  
-  \"payload_hash\": \"sha256:\...\"  
-  },  
-    
-  \"signature\": {  
-  \"key_id\": \"kid-456\",  
-  \"sig\": \"base64\...\"  
-  }  
-  }
-  ------------------------------------------------------------------------------------------
+```
+{
+"schema_version": "v1",
+"event_type": "gate.agent.message",
+"time": "2025-12-24T10:25:00Z",
 
-  ------------------------------------------------------------------------------------------
+"run_id": "uuid",
+"trace_id": "otel-trace-id",
+"tenant_id": "tenant-123",
+
+"protocol": {
+"version": "1.0",
+"capabilities": ["delegate_task", "return_result"],
+"nonce": "random-unique-nonce",
+"expires_at": "2025-12-24T10:26:00Z"
+},
+
+"sender": {
+"agent_instance_id": "spiffe://org/agent/planner#run-123",
+"subject_id": "spiffe://org/agent/planner"
+},
+
+"recipient": {
+"subject_id": "spiffe://org/agent/executor"
+},
+
+"payload": {
+"type": "delegate_task",
+"task_id": "uuid",
+"inputs": { "tool": "crm.update_contact", "args": { "contact_id": "123" } }
+},
+
+"hashes": {
+"payload_hash": "sha256:..."
+},
+
+"signature": {
+"key_id": "kid-456",
+"sig": "base64..."
+}
+}
+```
 
 ## HITL Decision Record (Approval Gate)
 
 **HITLDecisionRecord (YAML)**
 
-  -----------------------------------------------------------------------------------------
-  schema_version: v1  
-  approval_id: appr-uuid  
-  time: \"2025-12-24T10:22:00Z\"run_id: uuidtrace_id: otel-trace-idtenant_id: tenant-123  
-  environment: prod  
-    
-  request:  
-  tool_name: transfer_funds request_hash: \"sha256:\...\"  
-  amount_usd: 5000  
-  destination_ref: \"vendor-verified-id\"  
-    
-  context:  
-  orm_risk_score: 0.72 policy_decision_id: uuid  
-  ledger_head_ref: \"ledger://head/\...\"  
-    
-  decision:  
-  approver_id: \"role:treasury-approver\"  
-  action: \"approve\" *\# approve \| deny \| modify \| request_more_info*  
-  justification: \"Vendor verified, within policy, invoice matched\"  
-  conditions:  
-  - \"must_use_account:primary\"  
-  - \"max_amount_usd:5000\"  
-    
-  evidence:  
-  signature: \"base64\...\" ledger_event_id: \"uuid\"
-  -----------------------------------------------------------------------------------------
+```
+schema_version: v1
+approval_id: appr-uuid
+time: "2025-12-24T10:22:00Z"run_id: uuidtrace_id: otel-trace-idtenant_id: tenant-123
+environment: prod
 
-  -----------------------------------------------------------------------------------------
+request:
+tool_name: transfer_funds request_hash: "sha256:..."
+amount_usd: 5000
+destination_ref: "vendor-verified-id"
+
+context:
+orm_risk_score: 0.72 policy_decision_id: uuid
+ledger_head_ref: "ledger://head/..."
+
+decision:
+approver_id: "role:treasury-approver"
+action: "approve" *# approve | deny | modify | request_more_info*
+justification: "Vendor verified, within policy, invoice matched"
+conditions:
+- "must_use_account:primary"
+- "max_amount_usd:5000"
+
+evidence:
+signature: "base64..." ledger_event_id: "uuid"
+```
 
 # Reference Repository and Conformance Suite (Normative)
 
@@ -1780,7 +1765,7 @@ A per-agent-instance identity bound to verifiable runtime claims:
 
 - attestation pass/fail logs at the gateway
 
-- \% of tool/memory requests with verified identity + matching claims
+- % of tool/memory requests with verified identity + matching claims
 
 - revocation events with propagation time (seconds to effective stop)
 
@@ -1959,7 +1944,7 @@ Placement rationale: C17 sits in Layer 1 alongside C04 because it is an inventor
 
 Without this control, an organisation can operate GATE-conformant agents inside a control plane while an unknown number of ungoverned agents run elsewhere in the same environment, calling the same enterprise tools through workload identities that GATE never sees. The failure mode is invisible coverage loss: the C01-C16 evidence stream attests to the agents the platform knows about and tells you nothing about the agents it does not.
 
-This happens through several routes. An engineer integrates an LLM into an existing service and the service's workload identity starts making tool-shaped calls without ever being declared an agent. A vendor SaaS product activates an \"AI agent\" feature that calls back into customer infrastructure. A platform team enables a managed-agent capability inside a cloud account that was not part of the original GATE rollout. In each case the existing GATE controls behave correctly within their scope - they were never asked to govern the agent - while the organisation's risk posture changes silently.
+This happens through several routes. An engineer integrates an LLM into an existing service and the service's workload identity starts making tool-shaped calls without ever being declared an agent. A vendor SaaS product activates an "AI agent" feature that calls back into customer infrastructure. A platform team enables a managed-agent capability inside a cloud account that was not part of the original GATE rollout. In each case the existing GATE controls behave correctly within their scope - they were never asked to govern the agent - while the organisation's risk posture changes silently.
 
 Prompt-based constraints fail here for the same reason they fail elsewhere: the agent is not asking the GATE control plane for permission. Conventional application logging fails because the workload identity making the calls looks like a service, not an agent, and service identities are not subject to ABOM verification or lifecycle review. Network-level egress monitoring catches the call but not the intent: it cannot distinguish a deterministic API client from a model-driven agent making the same call.
 
@@ -2047,11 +2032,11 @@ The default C17 flow routes every discovered candidate to a human Commission ste
 
 The fast-path is a configurable extension to the default flow. A candidate qualifies for the fast-path only if all three criteria hold:
 
-1.  The candidate\'s workload_class is present in the operator\'s approved_workload_classes list.
+1.  The candidate's workload_class is present in the operator's approved_workload_classes list.
 
-2.  The candidate\'s classification_confidence is at or above the effective threshold for that workload class (the per-class threshold if defined, else the default threshold).
+2.  The candidate's classification_confidence is at or above the effective threshold for that workload class (the per-class threshold if defined, else the default threshold).
 
-3.  The candidate\'s asset tags are present and resolve to a known owner in the organisation\'s asset registry.
+3.  The candidate's asset tags are present and resolve to a known owner in the organisation's asset registry.
 
 A candidate failing any one criterion is routed to the standard Commission flow with no change to the existing C04 behaviour. There is no third state.
 
@@ -2063,11 +2048,11 @@ The fast-path does not eliminate governance. It automates the routine case. Thre
 
 - The auto_enrolment_policy_hash is hashed into every fast-path agent.discovered event. Replay against the historical policy is possible; a fast-path decision recorded against policy hash X cannot be retroactively justified by policy hash Y.
 
-- The fast-path is per-workload-class and per-confidence-band, configured separately for each. The fast-path is not a single global on/off switch. The configuration shape is preserved as a future expansion surface: a candidate\'s workload class might map to different thresholds in different tenants or different environments.
+- The fast-path is per-workload-class and per-confidence-band, configured separately for each. The fast-path is not a single global on/off switch. The configuration shape is preserved as a future expansion surface: a candidate's workload class might map to different thresholds in different tenants or different environments.
 
-The auto_enrolment_policy shape is normative in v1.4. See auto_enrolment_policy.schema.json in gate-contracts v1.2.0. The schema defines a default_confidence_threshold, an approved_workload_classes array, a require_asset_tags boolean, and an optional workload_class_thresholds map from workload class string to confidence threshold number. For a candidate with workload class W, the effective threshold is workload_class_thresholds\[W\] if present, else default_confidence_threshold. If a candidate\'s workload class is not in approved_workload_classes, the fast-path is not eligible regardless of threshold. The per-class threshold shape is normative in v1.2.0 contracts because a later move from a single global threshold to per-class thresholds would be a breaking schema change. The contract surface anticipates this evolution from the start.
+The auto_enrolment_policy shape is normative in v1.4. See auto_enrolment_policy.schema.json in gate-contracts v1.2.0. The schema defines a default_confidence_threshold, an approved_workload_classes array, a require_asset_tags boolean, and an optional workload_class_thresholds map from workload class string to confidence threshold number. For a candidate with workload class W, the effective threshold is workload_class_thresholds[W] if present, else default_confidence_threshold. If a candidate's workload class is not in approved_workload_classes, the fast-path is not eligible regardless of threshold. The per-class threshold shape is normative in v1.2.0 contracts because a later move from a single global threshold to per-class thresholds would be a breaking schema change. The contract surface anticipates this evolution from the start.
 
-**Tier guidance.** The fast-path is recommended for bounded tier when the operator has at least thirty days of observe-only data showing a stable false-positive rate and a tagged-asset coverage rate above a documented floor. The fast-path is permitted at high_privilege tier only when the workload class\'s per-class threshold is explicitly raised above the default (a minimum offset is recommended; the specific value is left to operator discretion and documented in the policy change rationale). Untagged candidates remain immediate-termination at high_privilege by default; the fast-path requires require_asset_tags=true and resolution.
+**Tier guidance.** The fast-path is recommended for bounded tier when the operator has at least thirty days of observe-only data showing a stable false-positive rate and a tagged-asset coverage rate above a documented floor. The fast-path is permitted at high_privilege tier only when the workload class's per-class threshold is explicitly raised above the default (a minimum offset is recommended; the specific value is left to operator discretion and documented in the policy change rationale). Untagged candidates remain immediate-termination at high_privilege by default; the fast-path requires require_asset_tags=true and resolution.
 
 **Failure modes specific to the fast-path.**
 
@@ -2075,7 +2060,7 @@ The auto_enrolment_policy shape is normative in v1.4. See auto_enrolment_policy.
 
 - Threshold drift below the no-regret floor. Operators tune the threshold downward to clear the queue, eventually pushing it below the rate at which fast-path enrolments are accurate. Mitigation: the policy carries an absolute floor (recommended: 0.80) below which no per-class threshold may be set; the schema enforces the floor; the conformance check confirms the floor.
 
-- Asset registry gaps. The fast-path requires resolvable asset tags; an asset registry with stale entries produces fast-path enrolments owned by people who have left the organisation. Mitigation: the asset registry resolution returns an owner_last_validated_at timestamp; resolution older than a configured window fails the fast-path and routes the candidate to manual Commission. The owner_last_validated_at field is a read-side property of the operator\'s asset registry, which is external to GATE; GATE consumes the field but does not contract it.
+- Asset registry gaps. The fast-path requires resolvable asset tags; an asset registry with stale entries produces fast-path enrolments owned by people who have left the organisation. Mitigation: the asset registry resolution returns an owner_last_validated_at timestamp; resolution older than a configured window fails the fast-path and routes the candidate to manual Commission. The owner_last_validated_at field is a read-side property of the operator's asset registry, which is external to GATE; GATE consumes the field but does not contract it.
 
 **Evidence**
 
@@ -2151,9 +2136,9 @@ A Tool Gateway that:
 
 - schema validation reject logs
 
-- \% of tool calls that bypass gateway (should be zero)
+- % of tool calls that bypass gateway (should be zero)
 
-**Deployment Note:** The \"Tool Gateway\" does not require a heavy network proxy (like an API Gateway) in every deployment. It is a logical intercept.
+**Deployment Note:** The "Tool Gateway" does not require a heavy network proxy (like an API Gateway) in every deployment. It is a logical intercept.
 
 - *Sidecar Pattern:* Deploy as a localhost sidecar for low latency.
 
@@ -2326,15 +2311,15 @@ A pre-execution invariant checker, implemented as a deterministic gate within th
 
 Core invariant classes:
 
-- Value bounds: transfer_funds.amount_usd \<= X
+- Value bounds: transfer_funds.amount_usd <= X
 
-- Action restrictions: env=prod =\> deny(tool.name matches \"delete\_\*\") unless exception_id present
+- Action restrictions: env=prod => deny(tool.name matches "delete\_*") unless exception_id present
 
 - Destination allowlists: http.request.host in allowlist_domains
 
 - Time windows: now in maintenance_window(tool.category)
 
-- Run limits: count(irrevocable_actions, run_id) \<= N
+- Run limits: count(irrevocable_actions, run_id) <= N
 
 **How**
 
@@ -2346,17 +2331,17 @@ For high-impact tools, the invariant gate MAY require pre-action verification ar
 
 Rollout: Begin in observe-only mode (log violations without halting) to baseline false-positive rates. Promote to enforce mode for irreversible and financial tool categories first, then extend to all side-effecting tools. Never run enforce mode without monitoring the alert path end-to-end.
 
-Testing: For each invariant, maintain a dedicated test case that proves the invariant halts the call when violated. These tests must run in CI on every policy or invariant bundle change. Include at least one test per invariant class where the ORM score and policy decision are both \"allow\" - confirming the invariant layer is independent of policy.
+Testing: For each invariant, maintain a dedicated test case that proves the invariant halts the call when violated. These tests must run in CI on every policy or invariant bundle change. Include at least one test per invariant class where the ORM score and policy decision are both "allow" - confirming the invariant layer is independent of policy.
 
 #### Break-glass override (contract-backed)
 
 C09 invariants are non-overridable by default. They are the boolean rules whose failure means an action is denied no matter what policy decision preceded it. Production operations occasionally require an authorised exception: an emergency that justifies a tightly-bounded override of a specific invariant for a specific run. v1.4 contracts the override mechanism end to end.
 
-The override is authorised by a break_glass_record. The record is a signed artifact, not an event: see break_glass_record.schema.json in gate-contracts v1.2.0. It carries record_id (uuid), invariant_halt_event_id (the ledger event that triggered the record\'s creation; single-valued in both scope cases), invariant_rule_id (the rule the override applies to), approver_ids (an array of at least two distinct strings, enforcing dual approval at the schema level with uniqueItems enforced by the schema), justification (a string with a minimum length of 50 characters), exception_scope (a discriminator over specific_run and time_window), time_window_start (date-time, required when exception_scope is time_window and otherwise absent), exception_expires_at (an absolute time bound; for time_window scope this is the window end, for specific_run scope this is the deadline by which the single override must be exercised), the signing_key_ids, and the signatures themselves.
+The override is authorised by a break_glass_record. The record is a signed artifact, not an event: see break_glass_record.schema.json in gate-contracts v1.2.0. It carries record_id (uuid), invariant_halt_event_id (the ledger event that triggered the record's creation; single-valued in both scope cases), invariant_rule_id (the rule the override applies to), approver_ids (an array of at least two distinct strings, enforcing dual approval at the schema level with uniqueItems enforced by the schema), justification (a string with a minimum length of 50 characters), exception_scope (a discriminator over specific_run and time_window), time_window_start (date-time, required when exception_scope is time_window and otherwise absent), exception_expires_at (an absolute time bound; for time_window scope this is the window end, for specific_run scope this is the deadline by which the single override must be exercised), the signing_key_ids, and the signatures themselves.
 
-The record additionally carries tenant_id and environment matching the convention used by HITL Decision Records; the verification policy denies any override attempt where the halt event\'s tenant or environment differs from the record\'s.
+The record additionally carries tenant_id and environment matching the convention used by HITL Decision Records; the verification policy denies any override attempt where the halt event's tenant or environment differs from the record's.
 
-The two scope cases behave differently at runtime. exception_scope=specific_run means the record authorises exactly the override against the one halt event named in invariant_halt_event_id, and only that override. exception_scope=time_window means the record authorises the override against the triggering halt event AND any subsequent halt event of the same invariant_rule_id falling within \[time_window_start, exception_expires_at\]. Subsequent matched halt events resolve against the existing record; they do not produce new records. One authorisation episode, one record, regardless of how many halt events the window covers.
+The two scope cases behave differently at runtime. exception_scope=specific_run means the record authorises exactly the override against the one halt event named in invariant_halt_event_id, and only that override. exception_scope=time_window means the record authorises the override against the triggering halt event AND any subsequent halt event of the same invariant_rule_id falling within [time_window_start, exception_expires_at]. Subsequent matched halt events resolve against the existing record; they do not produce new records. One authorisation episode, one record, regardless of how many halt events the window covers.
 
 The invariant halt event in the audit ledger (C11) MUST reference a valid break_glass_record_id. A halt event without a record reference is treated as an unauthorised override and surfaces in the conformance run as a Check09 failure. The verification policy at policies/invariants/c09_break_glass_verification.rego in gate-policies v1.2.0 evaluates each break-glass attempt against the record, confirming on every invocation that dual approval is present (the approver array contains at least two distinct entries), that the exception has not expired, that the invariant_rule_id in the record matches the rule that the halt event flagged, and that the signatures are present and valid against the registered signing keys.
 
@@ -2364,7 +2349,7 @@ The record is the authorisation evidence. The halt event is the trigger evidence
 
 **Failure modes specific to break-glass.**
 
-- Reusing a single break-glass record against unrelated halt events. The verification policy denies any attempt to bind a specific_run record to a halt event other than the one named in invariant_halt_event_id, and denies any attempt to bind a time_window record to a halt event whose invariant_rule_id does not match the record\'s or whose timestamp falls outside \[time_window_start, exception_expires_at\].
+- Reusing a single break-glass record against unrelated halt events. The verification policy denies any attempt to bind a specific_run record to a halt event other than the one named in invariant_halt_event_id, and denies any attempt to bind a time_window record to a halt event whose invariant_rule_id does not match the record's or whose timestamp falls outside [time_window_start, exception_expires_at].
 
 - Approver collusion through proxy signing. The schema requires distinct approver_ids (enforced by uniqueItems) but cannot detect a single human controlling two accounts. Mitigation is operational: the approval workflow enforces independent organisational role separation; the conformance check verifies the role separation as a manual step (Check09 PARTIAL).
 
@@ -2372,7 +2357,7 @@ The record is the authorisation evidence. The halt event is the trigger evidence
 
 **Tier guidance**
 
-Break-glass is permitted at high_privilege tier as the documented escape hatch from invariant denial. It is permitted at bounded tier only for a narrow set of invariant rules documented in the operator\'s runbook. At sandbox tier, break-glass is not permitted: any sandbox invariant denial is a deny outcome, no exception.
+Break-glass is permitted at high_privilege tier as the documented escape hatch from invariant denial. It is permitted at bounded tier only for a narrow set of invariant rules documented in the operator's runbook. At sandbox tier, break-glass is not permitted: any sandbox invariant denial is a deny outcome, no exception.
 
 **Evidence**
 
@@ -2481,27 +2466,27 @@ C18 v1.3 enforces that a provenance_uri resolves and that a provenance_hash matc
 
 v1.4 extends provenance enforcement to require a chain back to a registered source. A registered source is one of:
 
-- A data source registered in the C04 inventory. The Memory Gateway\'s source registration tracks which upstream pipelines are authorised to write into which content classes, with a signed registration record per source.
+- A data source registered in the C04 inventory. The Memory Gateway's source registration tracks which upstream pipelines are authorised to write into which content classes, with a signed registration record per source.
 
 - A verified external feed listed in the approved feed registry. The feed registry is a signed, versioned artifact carrying the set of approved external sources, each with a stable identifier and a verification mechanism (typically a public-key fingerprint or a published source manifest hash).
 
-A provenance_uri that resolves and hashes cleanly but points to a source absent from both registries fails the C18 provenance gate. The retrieval is denied at high_privilege tier; at bounded tier the retrieval is flagged with provenance_unregistered and routed through the operator\'s configured action.
+A provenance_uri that resolves and hashes cleanly but points to a source absent from both registries fails the C18 provenance gate. The retrieval is denied at high_privilege tier; at bounded tier the retrieval is flagged with provenance_unregistered and routed through the operator's configured action.
 
 The chain enforcement is structural, not by content match. The Memory Gateway holds a snapshot of both registries at start time, refreshed on registry change. On every retrieval, the gate evaluates:
 
 1.  The provenance_uri resolves.
 
-2.  The resolved content\'s hash matches the stored provenance_hash.
+2.  The resolved content's hash matches the stored provenance_hash.
 
 3.  The source identifier extracted from the provenance_uri is present in the active C04 source registry OR in the active feed registry.
 
 All three must hold for the retrieval to pass the provenance dimension at high_privilege tier. The feed registry hash is recorded in the quality_decision event so an auditor can replay the registration state at the time of the decision.
 
-The control distinction from C03 is preserved. C03 covers code, policy bundles, prompt bundles, and tool schemas - the artifacts the agent runtime loads and executes. C18 provenance covers data sources that feed the agent\'s memory: the upstream pipelines and external feeds whose content becomes retrieval results. The two control surfaces overlap in spirit (both are about knowing the origin of trusted material) but operate on different artifact classes.
+The control distinction from C03 is preserved. C03 covers code, policy bundles, prompt bundles, and tool schemas - the artifacts the agent runtime loads and executes. C18 provenance covers data sources that feed the agent's memory: the upstream pipelines and external feeds whose content becomes retrieval results. The two control surfaces overlap in spirit (both are about knowing the origin of trusted material) but operate on different artifact classes.
 
 This change closes one specific class of failure: a self-referential or shadow source that satisfies the existence-and-integrity check by writing its own provenance_uri against its own document corpus. The v1.3 mitigation noted this failure mode and recommended schema-level constraints on the provenance_uri shape. v1.4 makes the constraint explicit and enforces it through the registry chain rather than through URI pattern matching alone.
 
-**Provenance URI scheme.** The chain check is enforced at policy evaluation time, not at write time, so provenance_uri remains a free-form URI in memory_item.schema.json for backward compatibility. The Rego policy in policies/memory/c18_quality.rego recognises two normative schemes: gate-source://\<source_id\>/\<path\> resolves the \<source_id\> against the active C04 source registry, and gate-feed://\<feed_id\>/\<path\> resolves the \<feed_id\> against the approved feed registry. URIs in either normative scheme that resolve to a registered entry pass the chain check. URIs in either scheme that fail to resolve are denied at high_privilege and flagged at bounded. URIs using neither scheme (the legacy case) are denied at high_privilege and flagged at bounded; this is how the upgrade from v1.3 lands operationally.
+**Provenance URI scheme.** The chain check is enforced at policy evaluation time, not at write time, so provenance_uri remains a free-form URI in memory_item.schema.json for backward compatibility. The Rego policy in policies/memory/c18_quality.rego recognises two normative schemes: gate-source://<source_id>/<path> resolves the <source_id> against the active C04 source registry, and gate-feed://<feed_id>/<path> resolves the <feed_id> against the approved feed registry. URIs in either normative scheme that resolve to a registered entry pass the chain check. URIs in either scheme that fail to resolve are denied at high_privilege and flagged at bounded. URIs using neither scheme (the legacy case) are denied at high_privilege and flagged at bounded; this is how the upgrade from v1.3 lands operationally.
 
 **Failure modes specific to the chain check.**
 
@@ -2511,7 +2496,7 @@ This change closes one specific class of failure: a self-referential or shadow s
 
 - C04 source registration overload. Pushing all upstream pipelines through C04 source registration imposes an integration cost on every team that writes into the memory store. Mitigation: source registration is per-source, not per-document; registering a source authorises the source to write into the content classes named in the registration record. Volume scales with sources, not documents.
 
-- Content-class vocabulary drift between feed registry and quality bundle. The feed registry\'s content_classes_authorised field lists the content classes the feed is allowed to write into. These class names MUST draw from the operator\'s content_class vocabulary maintained alongside C04 and the C18 quality bundle. The schema does not enforce the cross-reference because the vocabulary is operator-owned, not contract-owned. Mitigation is operational: a registry entry whose content_classes_authorised includes a class not present in the quality bundle is flagged in the quarterly registry review and resolved by either adding the class to the bundle or removing it from the entry.
+- Content-class vocabulary drift between feed registry and quality bundle. The feed registry's content_classes_authorised field lists the content classes the feed is allowed to write into. These class names MUST draw from the operator's content_class vocabulary maintained alongside C04 and the C18 quality bundle. The schema does not enforce the cross-reference because the vocabulary is operator-owned, not contract-owned. Mitigation is operational: a registry entry whose content_classes_authorised includes a class not present in the quality bundle is flagged in the quarterly registry review and resolved by either adding the class to the bundle or removing it from the entry.
 
 **Evidence**
 
@@ -2746,7 +2731,7 @@ This happens through several routes. A model provider updates a base model under
 
 The shared property of all these routes is that they are gradual and statistical rather than event-driven. There is no single failure event to trigger an adversarial detector. The model's refusal rate creeps from 2% to 4% over two months. The mean output length grows by 18%. The distribution of tool choices shifts from 60/30/10 to 45/40/15. None of these crosses any per-call threshold; all of them, together, mean the system is no longer behaving the way it was when it was certified.
 
-Prompt-based constraints cannot detect this because they operate per call. C13 semantic traces capture the data but not the distribution comparison. C16 adversarial validation does not fire because nothing is attacking the system. The control gap is between \"no incident\" and \"the model is fine\".
+Prompt-based constraints cannot detect this because they operate per call. C13 semantic traces capture the data but not the distribution comparison. C16 adversarial validation does not fire because nothing is attacking the system. The control gap is between "no incident" and "the model is fine".
 
 This control reduces risk by establishing a baseline behavioural profile at deployment, continuously comparing production behaviour against the baseline using statistical tests, and routing significant deviations through a governance response path (flag for review, reduce autonomy tier, escalate to human oversight) rather than to a deny outcome.
 
@@ -2824,7 +2809,7 @@ flowchart TB
 
 *Control-plane flow*
 
-The C19 baseline profiler runs as a job at deployment time (and on demand when re-baselining is approved). It consumes a defined corpus, computes per-dimension distributions, signs the baseline, and registers it with the drift detector. The drift detector runs as a streaming job over the C13 semantic event stream. On each evaluation interval (default: hourly compute, daily decision emission), it computes rolling-window distributions and runs the statistical tests. When a per-dimension drift score crosses the configured threshold (default: p \< 0.01 sustained over the next evaluation window to avoid noisy single-window triggers), it emits a gate.assurance.drift_decision event. The response router consumes drift_decision events and emits the configured response action; the response action is itself a ledger event so the response chain is auditable.
+The C19 baseline profiler runs as a job at deployment time (and on demand when re-baselining is approved). It consumes a defined corpus, computes per-dimension distributions, signs the baseline, and registers it with the drift detector. The drift detector runs as a streaming job over the C13 semantic event stream. On each evaluation interval (default: hourly compute, daily decision emission), it computes rolling-window distributions and runs the statistical tests. When a per-dimension drift score crosses the configured threshold (default: p < 0.01 sustained over the next evaluation window to avoid noisy single-window triggers), it emits a gate.assurance.drift_decision event. The response router consumes drift_decision events and emits the configured response action; the response action is itself a ledger event so the response chain is auditable.
 
 *Deployment*
 
@@ -2832,7 +2817,7 @@ The profiler and detector run outside the agent runtime. The profiler is a batch
 
 *Baseline management*
 
-Baselines are tied to ABOM versions. When the ABOM changes (model version, prompt bundle, tool schema), the existing baseline is invalidated and a new baseline must be produced under a controlled re-baselining window. Re-baselining is an approved change with a signed approval record, to prevent drift from being silently re-baselined away (\"the new baseline is whatever the model is doing now\"). The re-baselining approval requires a rationale and ties to a change ticket.
+Baselines are tied to ABOM versions. When the ABOM changes (model version, prompt bundle, tool schema), the existing baseline is invalidated and a new baseline must be produced under a controlled re-baselining window. Re-baselining is an approved change with a signed approval record, to prevent drift from being silently re-baselined away ("the new baseline is whatever the model is doing now"). The re-baselining approval requires a rationale and ties to a change ticket.
 
 *Safe rollout*
 
@@ -2874,9 +2859,9 @@ C19 depends on C13 for input data. An organisation cannot deploy C19 without fir
 
 - Response routing without an HITL path. Drift is detected and the system halts the agent autonomously with no human in the loop. For some tiers this is desired; for others it produces over-response. Mitigation: response action is per-tier and per-dimension; halt-via-C06 is reserved for high-privilege and for dimensions where automated halt is documented as the correct response.
 
-- Detection on insufficient volume. The detector runs on an agent that handles low traffic; the rolling window does not have enough samples for the statistical test to be meaningful. Mitigation: minimum sample size per window is enforced; below the minimum, the dimension is marked \"insufficient data\" rather than \"no drift\", and a meta-alert fires if dimensions remain in insufficient-data state for too long.
+- Detection on insufficient volume. The detector runs on an agent that handles low traffic; the rolling window does not have enough samples for the statistical test to be meaningful. Mitigation: minimum sample size per window is enforced; below the minimum, the dimension is marked "insufficient data" rather than "no drift", and a meta-alert fires if dimensions remain in insufficient-data state for too long.
 
-- Confusion with C16. Operators treat C19 drift detection as adversarial detection and look for an attacker when there is none, missing the real cause (model update, tokeniser change, retrieval distribution shift). Mitigation: documentation and the event type distinction make the C19/C16 boundary explicit; runbooks for drift response do not start with \"look for attack signals\".
+- Confusion with C16. Operators treat C19 drift detection as adversarial detection and look for an attacker when there is none, missing the real cause (model update, tokeniser change, retrieval distribution shift). Mitigation: documentation and the event type distinction make the C19/C16 boundary explicit; runbooks for drift response do not start with "look for attack signals".
 
 - Drift on a dimension that is not in the baseline. The model starts using a new tool or producing a new output category that was not present in the baseline corpus, so no baseline distribution exists. Mitigation: the detector emits a separate new_dimension_observed event for any behaviour outside the baseline support; this is treated as a baseline-completeness alert and routed for review.
 
@@ -3235,7 +3220,7 @@ A workflow/orchestration layer that:
 
 - **Agent Deadlock:** Two agents waiting on each other for inputs (A waits for B, B waits for A).
 
-- **Mitigation:** The Orchestrator must implement a \"cycle detection\" or \"step timeout\" watchdog that terminates the DAG if progress stalls.
+- **Mitigation:** The Orchestrator must implement a "cycle detection" or "step timeout" watchdog that terminates the DAG if progress stalls.
 
 **Architect's Note - Macro control plane responsibilities**
 
@@ -3326,51 +3311,30 @@ Tier definitions
 
 ## Minimum Mandatory Controls by Tier
 
-Legend: ✅ required, ⭕ conditional (depends on data sensitivity / tenant / environment), - not required
+Legend: R = required, C = conditional (depends on data sensitivity / tenant / environment), - not required
 
-  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  **GATE Control**                                      **Sandbox**   **Bounded**                  **High-Privilege**                       **Notes (enforcement expectation)**
-  ----------------------------------------------------- ------------- ---------------------------- ---------------------------------------- ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  C01 Workload Identity & Attestation                   ✅            ✅                           ✅                                       Mandatory everywhere; basis for attribution and revocation
-
-  C02 Confidential Execution & Secret Boundary          ⭕            ⭕/ ✅                       ✅                                       Required for high-sensitivity data or regulated workloads
-
-  C03 Artifact Integrity & Supply Chain                 ✅            ✅                           ✅                                       Signed images + policy/prompt bundles; no "latest"
-
-  C04 Agent Lifecycle Governance                        ⭕            ✅                           ✅                                       Inventory + decommission strongly recommended even in sandbox
-
-  C05 Tool Gateway + Policy-as-Code                     ✅            ✅                           ✅                                       Sandbox may allow "monitor-only" briefly, but enforce before any real tools
-
-  C06 Circuit Breakers & Emergency Stop                 ⭕            ✅                           ✅                                       Mandatory once tools can cause side effects or costs are material
-
-  C07 Resource Governance & Budgets                     ✅            ✅                           ✅                                       Sandbox needs cost caps to prevent runaway spend
-
-  C08 Injection Defence (Direct + Indirect)             ✅            ✅                           ✅                                       Mandatory anywhere untrusted input exists (almost always)
-
-  C09 Execution Constraints & Pre-Action Verification   ⭕            ✅                           ✅                                       Bounded requires invariant checks for write tools; high-privilege requires strict gating
-
-  C10 Deterministic Replay                              ⭕            ✅                           ✅                                       Mandatory for production and incident response; optional in early sandbox
-
-  C11 Verifiable Audit Ledger                           ⭕            ✅                           ✅                                       Bounded+ must have tamper-evident and immutable evidence
-
-  C12 Signed Actions & Non-Repudiation                  ⭕            ⭕/ ✅                       ✅                                       Mandatory for high-impact tools; recommended for bounded write tools
-
-  C13 Semantic Observability                            ✅            ✅                           ✅                                       Required for ops; sandbox may store less but keep structure
-
-  C14 Secure Multi-Agent Protocols                      ⭕            ⭕/ ✅                       ✅                                       Mandatory once more than one agent participates in workflows
-
-  C15 Orchestration Control Plane                       ⭕            ✅                           ✅                                       Mandatory when workflows are multi-step or distributed; optional for single-run sandbox
-
-  C16 Continuous Adversarial + Formal Verification      ⭕            ✅                           ✅                                       Bounded needs adversarial regression; high-privilege adds formal verification for critical invariants
-
-  C17 Agent Discovery and Shadow AI Detection                         ✅                           ✅                                       Observe-only acceptable as an interim posture for Sandbox tier. Bounded and High-Privilege MUST run in enforce mode with the termination path (IdP revocation + Tool Gateway deny + egress block) validated end-to-end. Untagged candidates are treated as immediate-termination at High-Privilege.
-
-  C18 Data Quality Gates                                              ✅ (freshness, confidence)   ✅ (freshness, confidence, provenance)   Bounded tier MUST enforce freshness and confidence gates; provenance MAY be flag-only at this tier. High-Privilege tier MUST enforce all three. Action matrix per content class is defined in the signed quality bundle.
-
-  C19 Model Behaviour Monitoring                                      ✅ (log-only minimum)        ✅ (full response routing)               Depends on C13. Bounded requires at minimum log-only drift decisions per dimension; flag-and-review is recommended. High-Privilege requires the full response router including tier reduction; halt via C06 is reserved for refusal-rate and per-tool-argument-distribution dimensions. Baselines MUST be tied to ABOM version.
-
-  C20 Agent-to-Human Output Validation                                ✅ (flag-only minimum)       ✅ (enforce mode)                        Bounded tier MUST emit classification events on every final response with `sensitivity_tier` populated. High-Privilege tier MUST enforce the action matrix with `hold_for_review` and `hitl_review` obligations active for configured regulated categories. Bundle default at high_privilege MUST be `hold_for_review`; streaming output disabled at high_privilege for any agent whose action matrix can produce a hold or review obligation.
-  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| GATE Control | Sandbox | Bounded | High-Privilege | Notes (enforcement expectation) |
+|---|---|---|---|---|
+| C01 Workload Identity & Attestation | R | R | R | Mandatory everywhere; basis for attribution and revocation |
+| C02 Confidential Execution & Secret Boundary | C | C/ R | R | Required for high-sensitivity data or regulated workloads |
+| C03 Artifact Integrity & Supply Chain | R | R | R | Signed images + policy/prompt bundles; no "latest" |
+| C04 Agent Lifecycle Governance | C | R | R | Inventory + decommission strongly recommended even in sandbox |
+| C05 Tool Gateway + Policy-as-Code | R | R | R | Sandbox may allow "monitor-only" briefly, but enforce before any real tools |
+| C06 Circuit Breakers & Emergency Stop | C | R | R | Mandatory once tools can cause side effects or costs are material |
+| C07 Resource Governance & Budgets | R | R | R | Sandbox needs cost caps to prevent runaway spend |
+| C08 Injection Defence (Direct + Indirect) | R | R | R | Mandatory anywhere untrusted input exists (almost always) |
+| C09 Execution Constraints & Pre-Action Verification | C | R | R | Bounded requires invariant checks for write tools; high-privilege requires strict gating |
+| C10 Deterministic Replay | C | R | R | Mandatory for production and incident response; optional in early sandbox |
+| C11 Verifiable Audit Ledger | C | R | R | Bounded+ must have tamper-evident and immutable evidence |
+| C12 Signed Actions & Non-Repudiation | C | C/ R | R | Mandatory for high-impact tools; recommended for bounded write tools |
+| C13 Semantic Observability | R | R | R | Required for ops; sandbox may store less but keep structure |
+| C14 Secure Multi-Agent Protocols | C | C/ R | R | Mandatory once more than one agent participates in workflows |
+| C15 Orchestration Control Plane | C | R | R | Mandatory when workflows are multi-step or distributed; optional for single-run sandbox |
+| C16 Continuous Adversarial + Formal Verification | C | R | R | Bounded needs adversarial regression; high-privilege adds formal verification for critical invariants |
+| C17 Agent Discovery and Shadow AI Detection |  | R | R | Observe-only acceptable as an interim posture for Sandbox tier. Bounded and High-Privilege MUST run in enforce mode with the termination path (IdP revocation + Tool Gateway deny + egress block) validated end-to-end. Untagged candidates are treated as immediate-termination at High-Privilege. |
+| C18 Data Quality Gates |  | R (freshness, confidence) | R (freshness, confidence, provenance) | Bounded tier MUST enforce freshness and confidence gates; provenance MAY be flag-only at this tier. High-Privilege tier MUST enforce all three. Action matrix per content class is defined in the signed quality bundle. |
+| C19 Model Behaviour Monitoring |  | R (log-only minimum) | R (full response routing) | Depends on C13. Bounded requires at minimum log-only drift decisions per dimension; flag-and-review is recommended. High-Privilege requires the full response router including tier reduction; halt via C06 is reserved for refusal-rate and per-tool-argument-distribution dimensions. Baselines MUST be tied to ABOM version. |
+| C20 Agent-to-Human Output Validation |  | R (flag-only minimum) | R (enforce mode) | Bounded tier MUST emit classification events on every final response with `sensitivity_tier` populated. High-Privilege tier MUST enforce the action matrix with `hold_for_review` and `hitl_review` obligations active for configured regulated categories. Bundle default at high_privilege MUST be `hold_for_review`; streaming output disabled at high_privilege for any agent whose action matrix can produce a hold or review obligation. |
 
 Tier enforcement notes
 
@@ -3382,19 +3346,19 @@ Tier enforcement notes
 
 ## Performance Trade-offs & Tuning
 
-Implementing the full GATE suite introduces latency. Architects must balance the \"Latency Tax\" of verification against the risk profile of the agent. A fully blocking control loop (Request → Auth → Policy → Tool → Sign → Ledger → Response) can add 200ms--500ms per tool call.
+Implementing the full GATE suite introduces latency. Architects must balance the "Latency Tax" of verification against the risk profile of the agent. A fully blocking control loop (Request → Auth → Policy → Tool → Sign → Ledger → Response) can add 200ms--500ms per tool call.
 
 Tuning Patterns by Tier:
 
 - Synchronous Enforcement (High-Privilege Tier): All controls are blocking. The tool is not executed until the Policy Decision Record is signed, and the response is not returned to the model until the Audit Ledger commit is confirmed. Use this for financial or irreversible actions where correctness supersedes latency.
 
-- Asynchronous Evidence (Bounded/Sandbox Tier): Move the \"Evidence\" functions (C11 Ledger, C10 Replay recording) out of the critical path. The Gateway enforces Policy (allow/deny) synchronously but writes to the Audit Ledger and Replay Store asynchronously (eventual consistency).
+- Asynchronous Evidence (Bounded/Sandbox Tier): Move the "Evidence" functions (C11 Ledger, C10 Replay recording) out of the critical path. The Gateway enforces Policy (allow/deny) synchronously but writes to the Audit Ledger and Replay Store asynchronously (eventual consistency).
 
-- **Critical Warning:** Asynchronous evidence introduces a risk of \"Phantom Actions\" (action succeeds, log fails). For **High-Privilege** tiers, evidence emission MUST be synchronous (Fail-Closed). If the Ledger is unreachable, the Tool Gateway must deny the action.
+- **Critical Warning:** Asynchronous evidence introduces a risk of "Phantom Actions" (action succeeds, log fails). For **High-Privilege** tiers, evidence emission MUST be synchronous (Fail-Closed). If the Ledger is unreachable, the Tool Gateway must deny the action.
 
-- Storage Optimization (Payload vs. Hash): For Control 10 (Replay), full snapshot storage of large tool responses (e.g., \"read_emails\" returning 10MB of JSON) is cost-prohibitive.
+- Storage Optimization (Payload vs. Hash): For Control 10 (Replay), full snapshot storage of large tool responses (e.g., "read_emails" returning 10MB of JSON) is cost-prohibitive.
 
-  - Optimization: For data-heavy read tools, store only the response_hash in the replay trace and rely on the source system\'s retention for data recovery, rather than duplicating the payload in the GATE trace store.
+  - Optimization: For data-heavy read tools, store only the response_hash in the replay trace and rely on the source system's retention for data recovery, rather than duplicating the payload in the GATE trace store.
 
 ### Sizing and SLO Guidance (Implementer Notes)
 
@@ -3458,15 +3422,15 @@ Backpressure is not "best effort"; it is the primary mechanism preventing runawa
 
 Use this table to operationalize controls at the boundary where it matters most: tool execution. The "minimum" assumes enterprise production usage; tighten further with ORM thresholds and local policy.
 
-Legend: ✅ required, ⭕ conditional (depends on data sensitivity / tenant / environment), - not required
+Legend: R = required, C = conditional (depends on data sensitivity / tenant / environment), - not required
 
 | Tool category | Examples | Risk profile | Minimum GATE controls required |
 |---|---|---|---|
-| Read-only | search, fetch record, query KB, list tickets | Data exposure, prompt injection via returned content, lateral access | ✅ C01; ✅ C03; ✅ C05; ✅ C07; ✅ C08; ✅ C13; ✅ C17; ✅ C18 (freshness on retrieved content); ⭕ C19 (drift monitoring recommended); ✅ C20 (classification at delivery) |
-| Reversible write | create draft ticket, update non-critical field, enqueue job with rollback | Unauthorized modifications, noisy automation, compounding errors | ✅ C01; ✅ C03; ✅ C05; ✅ C06 breakers; ✅ C07; ✅ C08; ✅ C09 pre-action constraints; ✅ C11 audit ledger; ✅ C13; ⭕ C10 replay (recommended for prod); ⭕ C12 signed actions (for elevated writes); ✅ C17; ✅ C18; ⭕ C19; ✅ C20 |
-| Irreversible write | delete record, purge data, send external email, publish content | Permanent harm, compliance incidents, irreversible state | ✅ C01; ✅ C03; ✅ C05; ✅ C06; ✅ C07; ✅ C08; ✅ C09; ✅ C10 replay; ✅ C11 ledger; ✅ C12 non-repudiation; ✅ C13; ⭕ C16 formal verification (strongly recommended for deletion / purge); ⭕ HITL gate (via policy obligation); ✅ C17; ✅ C18; ✅ C19; ✅ C20 (enforce at high_privilege) |
-| Financial | transfer funds, issue refund, create invoice, change bank details | Fraud, direct monetary loss, regulatory exposure | ✅ C01; ✅ C03; ✅ C05; ✅ C06; ✅ C07; ✅ C08; ✅ C09; ✅ C10; ✅ C11; ✅ C12; ✅ C13; ✅ C16 (formal invariants for limits / allowlists); ✅ HITL for thresholded actions; ⭕ C02 confidential execution if sensitive financial identifiers used; ✅ C17; ✅ C18 (freshness on rates / balances / account state); ✅ C19; ✅ C20 (regulated category enforcement) |
-| Infrastructure | deploy service, rotate secrets, change firewall, scale cluster, modify IAM | Massive blast radius, outages, privilege escalation | ✅ C01; ✅ C03; ✅ C05; ✅ C06; ✅ C07; ✅ C08; ✅ C09; ✅ C10; ✅ C11; ✅ C12; ✅ C13; ✅ C15 orchestration; ✅ C16 (for invariants like "no public exposure"); ⭕ C02 for sensitive secrets / config; ⭕ C14 secure multi-agent protocols if delegated changes occur; ✅ C17; ✅ C18 (freshness on infrastructure state); ✅ C19; ✅ C20 |
+| Read-only | search, fetch record, query KB, list tickets | Data exposure, prompt injection via returned content, lateral access | R C01; R C03; R C05; R C07; R C08; R C13; R C17; R C18 (freshness on retrieved content); C C19 (drift monitoring recommended); R C20 (classification at delivery) |
+| Reversible write | create draft ticket, update non-critical field, enqueue job with rollback | Unauthorized modifications, noisy automation, compounding errors | R C01; R C03; R C05; R C06 breakers; R C07; R C08; R C09 pre-action constraints; R C11 audit ledger; R C13; C C10 replay (recommended for prod); C C12 signed actions (for elevated writes); R C17; R C18; C C19; R C20 |
+| Irreversible write | delete record, purge data, send external email, publish content | Permanent harm, compliance incidents, irreversible state | R C01; R C03; R C05; R C06; R C07; R C08; R C09; R C10 replay; R C11 ledger; R C12 non-repudiation; R C13; C C16 formal verification (strongly recommended for deletion / purge); C HITL gate (via policy obligation); R C17; R C18; R C19; R C20 (enforce at high_privilege) |
+| Financial | transfer funds, issue refund, create invoice, change bank details | Fraud, direct monetary loss, regulatory exposure | R C01; R C03; R C05; R C06; R C07; R C08; R C09; R C10; R C11; R C12; R C13; R C16 (formal invariants for limits / allowlists); R HITL for thresholded actions; C C02 confidential execution if sensitive financial identifiers used; R C17; R C18 (freshness on rates / balances / account state); R C19; R C20 (regulated category enforcement) |
+| Infrastructure | deploy service, rotate secrets, change firewall, scale cluster, modify IAM | Massive blast radius, outages, privilege escalation | R C01; R C03; R C05; R C06; R C07; R C08; R C09; R C10; R C11; R C12; R C13; R C15 orchestration; R C16 (for invariants like "no public exposure"); C C02 for sensitive secrets / config; C C14 secure multi-agent protocols if delegated changes occur; R C17; R C18 (freshness on infrastructure state); R C19; R C20 |
 
 Notes:
 
@@ -3585,7 +3549,7 @@ Replay harness uses archived policy bundles and identity fixtures (no dependence
 
 Requirement: Kill switch and circuit breakers halt side-effecting tool calls within an operational SLO.  
   
-Evidence: Breaker trigger event + subsequent denies for side-effect tools; measured time-to-containment (e.g., \< 30 seconds).
+Evidence: Breaker trigger event + subsequent denies for side-effect tools; measured time-to-containment (e.g., < 30 seconds).
 
 ## Conformance Check 08 - Resource Budgets are Enforced, Not Just Observed
 
@@ -3615,7 +3579,7 @@ Evidence: Quarantine events; provenance failures; test scenario results.
 
 Requirement: Semantic trace events must correlate to policy decisions, tool invocations, ledger events, and replay steps.  
   
-Evidence: Correlation queries demonstrate linkage: semantic_event.audit_ref -\> ledger_event_id -\> policy_decision_id -\> replay_trace_step.
+Evidence: Correlation queries demonstrate linkage: semantic_event.audit_ref -> ledger_event_id -> policy_decision_id -> replay_trace_step.
 
 ## Conformance Check 13 - Policy Bundle Versioning and Hash Pinning
 
@@ -3685,9 +3649,9 @@ A compliant implementation should produce a periodic conformance report:
 
 - Ledger integrity verification status: PASS
 
-- Replay success rate: \>= 95% (initial target; tighten over time)
+- Replay success rate: >= 95% (initial target; tighten over time)
 
-- Breaker containment SLO met: \>= 99%
+- Breaker containment SLO met: >= 99%
 
 - High-impact signature coverage: 100%
 
@@ -3775,39 +3739,23 @@ Every artifact listed below MUST include (or be linkable via):
 
 - **Sandbox (optional):** sandbox_hot_30d (lower-risk experimentation only)
 
-  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  **Evidence artifact**                                               **Produced by**                **When generated**                                 **Hot store (365d)**        **Cold store (6y)**                       **Notes / minimum integrity controls**
-  ------------------------------------------------------------------- ------------------------------ -------------------------------------------------- --------------------------- ----------------------------------------- ------------------------------------------------------------------------------------------------------------------
-  **Policy Decision Record** (\*.policy.decision)                     Tool Gateway / Policy Engine   Every tool attempt (allow/deny/obligations)        BigQuery                    GCS Coldline/Archive                      Must include decision_id, request_hash, policy_bundle_hash; export to immutable archive for bounded+
-
-  **Tool Request Envelope** (\*.tool.request)                         Tool Gateway                   Every tool call request                            BigQuery                    GCS Coldline/Archive                      Store **payload hash** by default; optionally store redacted payload; sensitive payloads should be pointer-based
-
-  **Tool Response Envelope** (\*.tool.response)                       Tool Gateway                   Every tool call response                           BigQuery                    GCS Coldline/Archive                      Must include response_hash, status, duration, and snapshot pointer for high-impact tools
-
-  **Tool Response Snapshots** (immutable objects)                     Replay Recorder / Gateway      For high-impact tools; optional for low risk       Optional index only         GCS Coldline/Archive                      Immutable snapshots for replay; encrypt; strict access controls
-
-  **Memory Read/Write Decisions** (\*.memory.read, \*.memory.write)   Memory Gateway                 Every memory operation                             BigQuery                    GCS Coldline/Archive                      Must prove **retrieval-time authorization** decisions and provenance checks
-
-  **Memory Quarantine Events** (\*.memory.quarantine)                 Memory Gateway                 On suspected poisoning                             BigQuery                    GCS Coldline/Archive                      Must include cause codes, affected partitions, provenance refs
-
-  **Audit Ledger Events** (\*.ledger.event)                           Audit Ledger Service           For governed actions/decisions                     BigQuery (index/metadata)   GCS Coldline/Archive (WORM)               Hash-chained + signed; immutable retention is mandatory for bounded+
-
-  **Ledger Integrity Reports**                                        Ledger Verifier                Scheduled + on-demand                              BigQuery (summary)          GCS Coldline/Archive (WORM)               Daily/weekly verification; produce PASS/FAIL and gaps
-
-  **Replay Trace** (trace YAML/JSON)                                  Replay Recorder                Every run (bounded/high)                           BigQuery (index/summary)    GCS Coldline/Archive                      Must capture bundles, seeds/config, tool/memory hashes, snapshot pointers
-
-  **Semantic Trace Events** (\*.semantic.\*)                          Observability Pipeline         Each boundary step (intent, decisions, outcomes)   BigQuery                    Optional cold                             Should be **non-sensitive summaries**; avoid raw chain-of-thought
-
-  **Breaker Trigger Events** (\*.breaker.trigger)                     Tool Gateway / Orchestrator    On threshold breach                                BigQuery                    GCS Coldline/Archive                      Must include threshold, cause codes, and containment outcome
-
-  **Budget / Quota Events** (\*.budget.\*, \*.quota.\*)               Gateway / Orchestrator         On consumption + enforcement                       BigQuery                    Optional cold                             Export to cold if required for audit trails or investigations
-
-  **HITL Decision Record** (approval record)                          HITL Service                   On approve/deny/modify                             BigQuery                    GCS Coldline/Archive (WORM recommended)   Must be signed and linked to request_hash + policy_decision_id
-
-  **Signed Action Proofs** (signature metadata)                       Gateway / Protocol Layer       For high-impact actions/messages                   BigQuery                    GCS Coldline/Archive                      Includes key ID, signature, verification result, ledger ref
-
-  **Conformance Report**                                              Conformance Runner             Scheduled (daily/weekly)                           BigQuery                    GCS Coldline/Archive                      Summarizes must-pass checks, exceptions, and evidence pointers
-  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Evidence artifact | Produced by | When generated | Hot store (365d) | Cold store (6y) | Notes / minimum integrity controls |
+|---|---|---|---|---|---|
+| **Policy Decision Record** (*.policy.decision) | Tool Gateway / Policy Engine | Every tool attempt (allow/deny/obligations) | BigQuery | GCS Coldline/Archive | Must include decision_id, request_hash, policy_bundle_hash; export to immutable archive for bounded+ |
+| **Tool Request Envelope** (*.tool.request) | Tool Gateway | Every tool call request | BigQuery | GCS Coldline/Archive | Store **payload hash** by default; optionally store redacted payload; sensitive payloads should be pointer-based |
+| **Tool Response Envelope** (*.tool.response) | Tool Gateway | Every tool call response | BigQuery | GCS Coldline/Archive | Must include response_hash, status, duration, and snapshot pointer for high-impact tools |
+| **Tool Response Snapshots** (immutable objects) | Replay Recorder / Gateway | For high-impact tools; optional for low risk | Optional index only | GCS Coldline/Archive | Immutable snapshots for replay; encrypt; strict access controls |
+| **Memory Read/Write Decisions** (*.memory.read, *.memory.write) | Memory Gateway | Every memory operation | BigQuery | GCS Coldline/Archive | Must prove **retrieval-time authorization** decisions and provenance checks |
+| **Memory Quarantine Events** (*.memory.quarantine) | Memory Gateway | On suspected poisoning | BigQuery | GCS Coldline/Archive | Must include cause codes, affected partitions, provenance refs |
+| **Audit Ledger Events** (*.ledger.event) | Audit Ledger Service | For governed actions/decisions | BigQuery (index/metadata) | GCS Coldline/Archive (WORM) | Hash-chained + signed; immutable retention is mandatory for bounded+ |
+| **Ledger Integrity Reports** | Ledger Verifier | Scheduled + on-demand | BigQuery (summary) | GCS Coldline/Archive (WORM) | Daily/weekly verification; produce PASS/FAIL and gaps |
+| **Replay Trace** (trace YAML/JSON) | Replay Recorder | Every run (bounded/high) | BigQuery (index/summary) | GCS Coldline/Archive | Must capture bundles, seeds/config, tool/memory hashes, snapshot pointers |
+| **Semantic Trace Events** (*.semantic.*) | Observability Pipeline | Each boundary step (intent, decisions, outcomes) | BigQuery | Optional cold | Should be **non-sensitive summaries**; avoid raw chain-of-thought |
+| **Breaker Trigger Events** (*.breaker.trigger) | Tool Gateway / Orchestrator | On threshold breach | BigQuery | GCS Coldline/Archive | Must include threshold, cause codes, and containment outcome |
+| **Budget / Quota Events** (*.budget.*, *.quota.*) | Gateway / Orchestrator | On consumption + enforcement | BigQuery | Optional cold | Export to cold if required for audit trails or investigations |
+| **HITL Decision Record** (approval record) | HITL Service | On approve/deny/modify | BigQuery | GCS Coldline/Archive (WORM recommended) | Must be signed and linked to request_hash + policy_decision_id |
+| **Signed Action Proofs** (signature metadata) | Gateway / Protocol Layer | For high-impact actions/messages | BigQuery | GCS Coldline/Archive | Includes key ID, signature, verification result, ledger ref |
+| **Conformance Report** | Conformance Runner | Scheduled (daily/weekly) | BigQuery | GCS Coldline/Archive | Summarizes must-pass checks, exceptions, and evidence pointers |
 
 ## **D. Minimum evidence pack by autonomy tier**
 
@@ -3947,156 +3895,144 @@ The gate-conformance repository holds additional mappings that are informative b
 
 ## Artifact A1 - Agent Bill of Materials (ABOM)
 
-+-----------------------------------------------------------------------+
-| agent:\                                                               |
-| name: \"invoice-reconciliation-agent\"\                               |
-| owner_team: \"finance-platform\"\                                     |
-| purpose: \"Reconcile supplier invoices against PO and GRN\"\          |
-| autonomy_tier: \"bounded\" *\# sandbox \| bounded \| high-privilege*\ |
-| \                                                                     |
-| dare:\                                                                |
-| required_controls:\                                                   |
-| - C01_workload_identity_and_attestation                               |
-|                                                                       |
-| \- C05_tool_gateway_policy_as_code                                    |
-|                                                                       |
-| \- C06_circuit_breakers_and_emergency_stop                            |
-|                                                                       |
-| \- C07_resource_governance_and_economic_safety                        |
-|                                                                       |
-| \- C10_deterministic_replay                                           |
-|                                                                       |
-| \- C11_verifiable_audit_ledger                                        |
-|                                                                       |
-| \- C13_semantic_observability_and_tracing\                            |
-| \                                                                     |
-| runtime:\                                                             |
-| platform: \"kubernetes\"\                                             |
-| image_digest: \"sha256:\...\" prompt_bundle_hash: \"sha256:\...\"\    |
-| toolset_hash: \"sha256:\...\" policy_bundle_hash: \"sha256:\...\"\    |
-| \                                                                     |
-| identity:\                                                            |
-| workload_id: \"spiffe://org/agent/invoice-recon\"\                    |
-| token_ttl: \"15m\"\                                                   |
-| attestation_required: true\                                           |
-| \                                                                     |
-| model:\                                                               |
-| model_id: \"provider/model\"\                                         |
-| temperature: 0.2\                                                     |
-| seed_mode: \"recorded\"\                                              |
-| system_prompt_version: \"v3.4.1\"\                                    |
-| \                                                                     |
-| memory:\                                                              |
-| partitions:\                                                          |
-| - name: \"finance\"\                                                  |
-| acl: \"role=finance\"\                                                |
-| ttl: \"30d\"\                                                         |
-| provenance_required: true\                                            |
-| \                                                                     |
-| tools:\                                                               |
-| - name: \"read_erp_po\"\                                              |
-| side_effecting: false\                                                |
-| required_controls: \[\"C05\", \"C11\", \"C09\"\]\                     |
-| - name: \"create_dispute_case\"\                                      |
-| side_effecting: true\                                                 |
-| required_controls: \[\"C05\", \"C11\", \"C12\", \"C06\"\]             |
-+-----------------------------------------------------------------------+
+```
+agent:
+name: "invoice-reconciliation-agent"
+owner_team: "finance-platform"
+purpose: "Reconcile supplier invoices against PO and GRN"
+autonomy_tier: "bounded" *# sandbox | bounded | high-privilege*
+
+dare:
+required_controls:
+- C01_workload_identity_and_attestation
+
+- C05_tool_gateway_policy_as_code
+
+- C06_circuit_breakers_and_emergency_stop
+
+- C07_resource_governance_and_economic_safety
+
+- C10_deterministic_replay
+
+- C11_verifiable_audit_ledger
+
+- C13_semantic_observability_and_tracing
+
+runtime:
+platform: "kubernetes"
+image_digest: "sha256:..." prompt_bundle_hash: "sha256:..."
+toolset_hash: "sha256:..." policy_bundle_hash: "sha256:..."
+
+identity:
+workload_id: "spiffe://org/agent/invoice-recon"
+token_ttl: "15m"
+attestation_required: true
+
+model:
+model_id: "provider/model"
+temperature: 0.2
+seed_mode: "recorded"
+system_prompt_version: "v3.4.1"
+
+memory:
+partitions:
+- name: "finance"
+acl: "role=finance"
+ttl: "30d"
+provenance_required: true
+
+tools:
+- name: "read_erp_po"
+side_effecting: false
+required_controls: ["C05", "C11", "C09"]
+- name: "create_dispute_case"
+side_effecting: true
+required_controls: ["C05", "C11", "C12", "C06"]
+```
 |                                                                       |
 +=======================================================================+
 
 ## Artifact A2 - Tool Authorization Matrix
 
-  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  **Tool**           **Side-effecting**   **Allowed Agents**                                                           **Required Controls**     **Required Conditions**
-  ------------------ -------------------- ---------------------------------------------------------------------------- ------------------------- ---------------------------------------------------------
-  transfer_funds     ✅                   treasury-agent                                                               C01,C05,C06,C07,C11,C12   amount\<=limit; vendor_verified; HITL if ORM\>threshold
-
-  delete_record      ✅                   none (deny by default -​​​​​​​​​​no agent permitted; exception-only via break-glass)   C01,C05,C06,C10,C11,C16   exception-only; formal verify; HITL mandatory
-
-  read_hr_salaries   ❌                   hr-agent                                                                     C01,C05,C11,C09           role=HR; purpose=compensation
-  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool | Side-effecting | Allowed Agents | Required Controls | Required Conditions |
+|---|---|---|---|---|
+| transfer_funds | Y | treasury-agent | C01,C05,C06,C07,C11,C12 | amount<=limit; vendor_verified; HITL if ORM>threshold |
+| delete_record | Y | none (deny by default -no agent permitted; exception-only via break-glass) | C01,C05,C06,C10,C11,C16 | exception-only; formal verify; HITL mandatory |
+| read_hr_salaries | N | hr-agent | C01,C05,C11,C09 | role=HR; purpose=compensation |
 
 ## Artifact A3 - Policy-as-Code Tool Gateway (Rego template)
 
-  --------------------------------------------------------------------
-  package gate.toolpolicy  
-  default allow := false  
-    
-  allow {  
-  input.tool == \"transfer_funds\"  
-  input.amount_usd \<= 1000  
-  input.destination_verified == true  
-  input.orm_risk \<= 0.60  
-  input.identity.attested == true  
-  }  
-    
-  obligations\[\"require_hitl\"\] {  
-  input.tool == \"transfer_funds\"  
-  input.amount_usd \> 500  
-  }
-  --------------------------------------------------------------------
+```
+package gate.toolpolicy
+default allow := false
 
-  --------------------------------------------------------------------
+allow {
+input.tool == "transfer_funds"
+input.amount_usd <= 1000
+input.destination_verified == true
+input.orm_risk <= 0.60
+input.identity.attested == true
+}
+
+obligations["require_hitl"] {
+input.tool == "transfer_funds"
+input.amount_usd > 500
+}
+```
 
 ## Artifact A4 - Secure Multi-Agent Protocol Envelope
 
-  ---------------------------------------------------------------------------------------
-  {  
-  \"version\": \"v1\",  
-  \"sender_id\": \"spiffe://org/agent/planner\",  
-  \"timestamp\": \"2025-12-24T10:20:00Z\",  
-  \"nonce\": \"random-unique\",  
-  \"payload\": { \"type\": \"delegate_task\", \"task_id\": \"uuid\", \"inputs\": {} },  
-  \"payload_hash\": \"sha256:\...\",  
-  \"signature\": \"sig:\...\"  
-  }
-  ---------------------------------------------------------------------------------------
-
-  ---------------------------------------------------------------------------------------
+```
+{
+"version": "v1",
+"sender_id": "spiffe://org/agent/planner",
+"timestamp": "2025-12-24T10:20:00Z",
+"nonce": "random-unique",
+"payload": { "type": "delegate_task", "task_id": "uuid", "inputs": {} },
+"payload_hash": "sha256:...",
+"signature": "sig:..."
+}
+```
 
 ## Artifact A5 - Semantic Observability Event Schema (excerpt)
 
-  ----------------------------------------------------------------------------------
-  {  
-  \"event_type\": \"gate.tool_call\",  
-  \"time\": \"2025-12-24T10:20:00Z\",  
-  \"agent_instance_id\": \"spiffe://org/agent/x#run-123\",  
-  \"trace_id\": \"trace-abc\",  
-  \"intent\": \"Update CRM contact email\",  
-  \"tool\": { \"name\": \"crm.update_contact\", \"args_hash\": \"sha256:\...\" },  
-  \"policy\": { \"decision\": \"allow\", \"policy_hash\": \"sha256:\...\" },  
-  \"orm\": { \"risk\": 0.42, \"band\": \"medium\" },  
-  \"audit_ref\": \"ledger_event_id\"  
-  }
-  ----------------------------------------------------------------------------------
-
-  ----------------------------------------------------------------------------------
+```
+{
+"event_type": "gate.tool_call",
+"time": "2025-12-24T10:20:00Z",
+"agent_instance_id": "spiffe://org/agent/x#run-123",
+"trace_id": "trace-abc",
+"intent": "Update CRM contact email",
+"tool": { "name": "crm.update_contact", "args_hash": "sha256:..." },
+"policy": { "decision": "allow", "policy_hash": "sha256:..." },
+"orm": { "risk": 0.42, "band": "medium" },
+"audit_ref": "ledger_event_id"
+}
+```
 
 ## Artifact A6 - Deterministic Replay Trace Format
 
-  --------------------------------------------------------------------
-  trace_id: \"trace-abc\"  
-  model:  
-  model_id: \"provider/model\"  
-  temperature: 0.2  
-  seed: 123456  
-  bundles:  
-  prompt_hash: \"sha256:\...\"  
-  policy_hash: \"sha256:\...\"  
-  steps:  
-  - step: 1  
-  input_hash: \"sha256:\...\"  
-  retrieved_context_hashes: \[\"sha256:\...\"\]  
-  - step: 2  
-  tool: \"crm.update_contact\" request_hash: \"sha256:\...\"  
-  response_snapshot_uri: \"immutable://snapshots/..\"  
-  decisions:  
-  - step: 2  
-  policy_decision: \"allow\"  
-  obligations: \[\"log\", \"sign\"\]
-  --------------------------------------------------------------------
-
-  --------------------------------------------------------------------
+```
+trace_id: "trace-abc"
+model:
+model_id: "provider/model"
+temperature: 0.2
+seed: 123456
+bundles:
+prompt_hash: "sha256:..."
+policy_hash: "sha256:..."
+steps:
+- step: 1
+input_hash: "sha256:..."
+retrieved_context_hashes: ["sha256:..."]
+- step: 2
+tool: "crm.update_contact" request_hash: "sha256:..."
+response_snapshot_uri: "immutable://snapshots/.."
+decisions:
+- step: 2
+policy_decision: "allow"
+obligations: ["log", "sign"]
+```
 
 ## Artifact A7 - ORM Risk Model Worksheet
 
@@ -4122,19 +4058,17 @@ Before promoting to production, validate your configuration against at least thr
 
 Each weight represents the maximum contribution of that signal to the composite risk score when the signal fires at full strength. Weights must sum to 1.0. If you add new signals, rebalance existing weights accordingly and document the change in your invariant bundle review log.
 
-  --------------------------------------------------------------------
-  thresholds:  
-  auto_execute: 0.20 add_verification: 0.45 require_hitl: 0.65  
-  block: 0.85  
-    
-  weights:  
-  high_impact_tool: 0.20  
-  policy_exception: 0.20 adversarial_flag: 0.25  
-  quota_pressure: 0.10 memory_poisoning_suspect: 0.20  
-  version_divergence: 0.05
-  --------------------------------------------------------------------
+```
+thresholds:
+auto_execute: 0.20 add_verification: 0.45 require_hitl: 0.65
+block: 0.85
 
-  --------------------------------------------------------------------
+weights:
+high_impact_tool: 0.20
+policy_exception: 0.20 adversarial_flag: 0.25
+quota_pressure: 0.10 memory_poisoning_suspect: 0.20
+version_divergence: 0.05
+```
 
 # **Appendix: Day-2 Operational Runbooks (Minimum Set)**
 
@@ -4217,7 +4151,7 @@ Scope: a single-agent workflow plus a multi-agent-safe foundation. Vendor-neutra
 
 **Scope and parity note**
 
-This appendix provides minimal reference architectures for AWS, Azure, and GCP. The AWS quickstart is the most detailed reference implementation for this release. The Azure and GCP quickstarts follow the same control mapping and are functionally equivalent - implementers on those platforms should read the AWS section for additional implementation rationale and apply the equivalent services listed in each platform\'s BoM and configuration notes.
+This appendix provides minimal reference architectures for AWS, Azure, and GCP. The AWS quickstart is the most detailed reference implementation for this release. The Azure and GCP quickstarts follow the same control mapping and are functionally equivalent - implementers on those platforms should read the AWS section for additional implementation rationale and apply the equivalent services listed in each platform's BoM and configuration notes.
 
 ## A. Minimal Reference Deployment (logical diagram)
 
@@ -4496,7 +4430,7 @@ HITL / Workflow (optional)
 
 - **Replay snapshots (C10):** Store snapshot objects in Azure Blob Storage with object immutability enabled. Use storage lifecycle policies to transition to cool/archive tier after the hot retention window.
 
-- **Circuit breakers (C06):** Implement break-glass stop via Azure API Management policy to revoke the agent\'s managed identity token and deny subsequent requests at the gateway layer.
+- **Circuit breakers (C06):** Implement break-glass stop via Azure API Management policy to revoke the agent's managed identity token and deny subsequent requests at the gateway layer.
 
 ## E. GCP Quickstart (minimal concrete implementation)
 
@@ -4600,7 +4534,7 @@ HITL / Workflow (optional)
 
 - **Replay snapshots (C10):** Store snapshot objects in GCS with object holds enabled. Use a separate storage bucket with uniform bucket-level access and retention lock distinct from the hot analytics store.
 
-- **Circuit breakers (C06):** Implement break-glass stop by revoking the agent workload\'s IAM binding via the IAM API. Combine with VPC firewall rule updates to block tool egress at the network layer for immediate containment.
+- **Circuit breakers (C06):** Implement break-glass stop by revoking the agent workload's IAM binding via the IAM API. Combine with VPC firewall rule updates to block tool egress at the network layer for immediate containment.
 
 ## F. Minimal "Day-1" Configuration (works across clouds)
 
