@@ -49,6 +49,13 @@ blockquote { margin: 6pt 0 6pt 12pt; padding-left: 8pt; border-left: 2pt solid #
 .pagebreak { page-break-after: always; }
 .hero img { max-width: 60%; }
 a { color: #1a4d8f; text-decoration: none; }
+.toc { page-break-after: always; }
+.toc-title { font-size: 19pt; font-weight: bold; margin: 0 0 14pt 0; }
+.toc-l1 { font-weight: bold; margin-top: 7pt; font-size: 9.5pt; }
+.toc-l2 { padding-left: 14pt; font-size: 9pt; margin-top: 2pt; font-weight: normal; }
+.toc-l3 { padding-left: 28pt; font-size: 9pt; margin-top: 1.5pt; font-weight: normal; }
+.toc a { color: #1a1a1a; }
+.toc a::after { content: leader(". ") target-counter(attr(href), page); font-weight: normal; color: #444; }
 '''
 
 
@@ -79,6 +86,38 @@ def build_pdf(out_path: Path) -> None:
     # licensing, and disclaimer front matter starts on page 2
     body = re.sub(r'(<h1 class="first">.*?</h1>\s*<p><em>.*?</em></p>)',
                   r'\1<div class="pagebreak"></div>', body, count=1, flags=re.S)
+    # table of contents: h1 and h2 entries with layout-time page numbers
+    headings = []
+
+    def tag_heading(m):
+        level, attrs, text = m.group(1), m.group(2), m.group(3)
+        if 'class="first"' in attrs:
+            return m.group(0)
+        hid = f'sec-{len(headings)}'
+        label = re.sub(r'<[^>]+>', '', text).strip()
+        headings.append((level, hid, label))
+        return f'<h{level}{attrs} id="{hid}">{text}</h{level}>'
+
+    def tag_h3(m):
+        attrs, text = m.group(1), m.group(2)
+        label = re.sub(r'<[^>]+>', '', text).strip()
+        if not label.startswith('Control '):
+            return m.group(0)
+        hid = f'sec-{len(headings)}'
+        headings.append(('3', hid, label))
+        return f'<h3{attrs} id="{hid}">{text}</h3>'
+
+    body = re.sub(r'<h([12])([^>]*)>(.*?)</h\1>', tag_heading, body, flags=re.S)
+    body = re.sub(r'<h3([^>]*)>(.*?)</h3>', tag_h3, body, flags=re.S)
+    # re-sort TOC entries into document order (h3 pass appended after h1/h2)
+    order = {hid: body.index(f'id="{hid}"') for _, hid, _ in headings}
+    headings.sort(key=lambda h: order[h[1]])
+    toc = ['<div class="toc"><div class="toc-title">Contents</div>']
+    toc += [f'<div class="toc-l{lvl}"><a href="#{hid}">{label}</a></div>'
+            for lvl, hid, label in headings]
+    toc.append('</div>')
+    body = body.replace('<div class="pagebreak"></div>',
+                        '<div class="pagebreak"></div>' + ''.join(toc), 1)
     html = (f'<!DOCTYPE html><html><head><meta charset="utf-8"><style>{CSS}</style></head>'
             f'<body><div class="hero"><img src="data:image/png;base64,{b64_png("hero")}"></div>'
             f'{body}</body></html>')
